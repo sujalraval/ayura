@@ -11,6 +11,6 @@ echo "Installing Dependencies..."
 /usr/bin/npm install --yes
 
 echo "Creating Production Build..."
-/usr/bin/npx vite build --outDir /var/www/html/dist
+npx vite build --outDir /var/www/html/dist
 
 echo "Deployment Finished!"
