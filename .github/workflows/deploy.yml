@@ -19,6 +19,6 @@ jobs:
           port: ${{ secrets.PORT }}
           key: ${{ secrets.SSHKEY }}
           script: |
-            cd /root/ayuracode/ayura 
+            cd /root/ayuracode/ayura/
             chmod +x ./.scripts/deploy.sh
             ./.scripts/deploy.sh
