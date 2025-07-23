@@ -8,7 +8,7 @@ git pull origin main
 echo "New changes copied to server !"
 
 echo "Installing Dependencies..."
-/usr/bin/npm install --yes
+npm install --yes
 
 echo "Creating Production Build..."
 npx vite build --outDir /var/www/html/dist
