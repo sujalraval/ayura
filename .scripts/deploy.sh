@@ -13,5 +13,5 @@ npm install --yes
 echo "Creating Production Build..."
 # Build directly to /var/www/auth/dist
 npx vite build --outDir /var/www/html/dist
-
+ 
 echo "Deployment Finished!"
