@@ -150,7 +150,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                 <div className="hidden md:block border-t border-gray-200">
                     <div className="flex items-center justify-end py-2 px-4 gap-4">
                         <a
-                            href="tel:+1234567890"
+                            href="tel:+7779064659"
                             className="flex items-center gap-2 text-sm hover:text-[#E23744] transition-colors"
                         >
                             <Phone className="w-4 h-4 text-[#E23744]" />
