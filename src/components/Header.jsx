@@ -127,7 +127,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                     <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 shadow-lg">
                         <div className="flex justify-around items-center py-3">
                             <a
-                                href="tel:+1234567890"
+                                href="tel:+7779064659"
                                 className="flex flex-col items-center text-xs text-gray-600 hover:text-[#E23744] transition-colors"
                             >
                                 <Phone className="w-6 h-6 mb-1" />
