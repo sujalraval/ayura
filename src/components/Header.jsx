@@ -154,7 +154,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                             className="flex items-center gap-2 text-sm hover:text-[#E23744] transition-colors"
                         >
                             <Phone className="w-4 h-4 text-[#E23744]" />
-                            <span>+1 (234) 567-890</span>
+                            <span>+91 7779064659</span>
                         </a>
                         <a
                             href="https://wa.me/1234567890"
