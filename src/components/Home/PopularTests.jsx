@@ -47,7 +47,7 @@ const PopularTests = () => {
                 return;
             }
 
-            const response = await axios.get(`http://localhost:5000/api/v1/cart/${userEmail}`);
+            const response = await axios.get(`https://ayuras.life/api/v1/cart/${userEmail}`);
             const serverCart = response.data.items || [];
             setCart(serverCart);
             localStorage.setItem('cart', JSON.stringify(serverCart));
@@ -125,7 +125,7 @@ const PopularTests = () => {
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
             // Then make the API call using the same structure as CategoryTests
-            await axios.post('http://localhost:5000/api/v1/cart/add', {
+            await axios.post('https://ayuras.life/api/v1/cart/add', {
                 userId: authUser.email,
                 test
             });
@@ -257,8 +257,8 @@ const PopularTests = () => {
                                     onClick={() => handleCartToggle(labTest)}
                                     disabled={cartLoading}
                                     className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${testInCart
-                                            ? 'bg-red-500 text-white hover:bg-red-600'
-                                            : 'bg-gradient-to-br from-[#E23744] to-[#FF5733] hover:brightness-110'
+                                        ? 'bg-red-500 text-white hover:bg-red-600'
+                                        : 'bg-gradient-to-br from-[#E23744] to-[#FF5733] hover:brightness-110'
                                         } ${cartLoading ? 'opacity-50 cursor-not-allowed' : ''} shadow-[0_4px_15px_rgba(226,55,68,0.3)]`}
                                 >
                                     {cartLoading ? (
