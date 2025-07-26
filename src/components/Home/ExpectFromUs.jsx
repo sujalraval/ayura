@@ -8,7 +8,7 @@ const ExpectFromUs = () => {
     useEffect(() => {
         const fetchExpectations = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/v1/expectations');
+                const res = await axios.get('https://ayuras.life/api/v1/expectations');
                 setServices(res.data);
             } catch (err) {
                 console.error('Failed to fetch expectations:', err);
