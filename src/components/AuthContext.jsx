@@ -79,8 +79,12 @@ export const AuthProvider = ({ children }) => {
         if (currentPath !== '/login') {
             localStorage.setItem('redirectAfterLogin', currentPath);
         }
-        // **FIXED**: Use production API URL
-        window.location.href = `${API_BASE_URL}/auth/google`;
+
+        // Get the full redirect URL based on environment
+        const redirectUrl = window.location.origin;
+        const googleAuthUrl = `${API_BASE_URL}/auth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+
+        window.location.href = googleAuthUrl;
     };
 
     const signOut = async () => {
