@@ -9,7 +9,7 @@ const WhyChoose = () => {
     useEffect(() => {
         const fetchWhyChooseItems = async () => {
             try {
-                const response = await axios.get('/api/v1/why-choose/');
+                const response = await axios.get('https://ayuras.life/api/v1/why-choose/');
                 const items = Array.isArray(response.data)
                     ? response.data
                     : response.data.data || response.data.items || [];
