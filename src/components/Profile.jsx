@@ -1,40 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-    const { user, loading, isAuthenticated } = useAuth();
+    const { user, loading, isAuthenticated, signOut } = useAuth();
     const navigate = useNavigate();
-    const [showWelcome, setShowWelcome] = useState(false);
-
-    useEffect(() => {
-        // Check if user just logged in (token in URL)
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasToken = urlParams.get('token');
-
-        if (hasToken) {
-            setShowWelcome(true);
-            // Auto-hide welcome message after 3 seconds
-            setTimeout(() => setShowWelcome(false), 3000);
-        }
-    }, []);
 
     useEffect(() => {
         if (!loading && !isAuthenticated()) {
-            console.log('❌ User not authenticated, redirecting to login');
             navigate('/login');
         }
     }, [loading, isAuthenticated, navigate]);
 
+    const handleSignOut = () => {
+        signOut();
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-8 shadow-lg">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-gray-600">Loading your profile...</span>
-                    </div>
-                </div>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
             </div>
         );
     }
@@ -44,76 +29,75 @@ const Profile = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100">
-            {/* Welcome Message */}
-            {showWelcome && (
-                <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-                    Welcome back, {user.name}! 🎉
-                </div>
-            )}
-
-            <div className="container mx-auto px-4 py-8">
-                <div className="max-w-4xl mx-auto">
-                    {/* Header */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-                        <div className="flex items-center space-x-6">
-                            <img
-                                src={user.avatar || '/default-avatar.png'}
-                                alt={user.name}
-                                className="w-24 h-24 rounded-full border-4 border-emerald-200"
-                            />
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                                    Welcome, {user.name}! 👋
-                                </h1>
-                                <p className="text-gray-600 text-lg">{user.email}</p>
-                                <div className="flex items-center mt-2">
-                                    <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        {user.role || 'User'}
-                                    </span>
-                                </div>
+        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div className="px-4 py-5 sm:px-6">
+                        <h3 className="text-lg leading-6 font-medium text-gray-900">
+                            User Profile
+                        </h3>
+                        <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                            Personal details and information.
+                        </p>
+                    </div>
+                    <div className="border-t border-gray-200">
+                        <dl>
+                            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt className="text-sm font-medium text-gray-500">
+                                    Full name
+                                </dt>
+                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    {user.name}
+                                </dd>
                             </div>
-                        </div>
+                            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt className="text-sm font-medium text-gray-500">
+                                    Email address
+                                </dt>
+                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    {user.email}
+                                </dd>
+                            </div>
+                            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt className="text-sm font-medium text-gray-500">
+                                    Role
+                                </dt>
+                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    {user.role || 'User'}
+                                </dd>
+                            </div>
+                            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt className="text-sm font-medium text-gray-500">
+                                    Profile Picture
+                                </dt>
+                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    {user.avatar ? (
+                                        <img
+                                            className="h-20 w-20 rounded-full"
+                                            src={user.avatar}
+                                            alt={user.name}
+                                        />
+                                    ) : (
+                                        <div className="h-20 w-20 rounded-full bg-gray-300 flex items-center justify-center">
+                                            <span className="text-gray-600 text-xl">
+                                                {user.name?.charAt(0)?.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    )}
+                                </dd>
+                            </div>
+                        </dl>
                     </div>
+                </div>
 
-                    {/* Profile Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="bg-white rounded-xl p-6 shadow-md">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Account Status</h3>
-                            <p className="text-3xl font-bold text-emerald-600">Active</p>
-                        </div>
-                        <div className="bg-white rounded-xl p-6 shadow-md">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Member Since</h3>
-                            <p className="text-3xl font-bold text-emerald-600">
-                                {user.createdAt ? new Date(user.createdAt).getFullYear() : 'Recently'}
-                            </p>
-                        </div>
-                        <div className="bg-white rounded-xl p-6 shadow-md">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Last Login</h3>
-                            <p className="text-sm text-gray-600">
-                                {user.lastLoginAt
-                                    ? new Date(user.lastLoginAt).toLocaleDateString()
-                                    : 'Today'
-                                }
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <button className="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg transition-colors">
-                                Update Profile
-                            </button>
-                            <button className="bg-teal-500 hover:bg-teal-600 text-white p-4 rounded-lg transition-colors">
-                                Health Records
-                            </button>
-                            <button className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg transition-colors">
-                                Appointments
-                            </button>
-                        </div>
-                    </div>
+                {/* Sign Out Button */}
+                <div className="mt-6">
+                    <button
+                        onClick={handleSignOut}
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                        Sign Out
+                    </button>
                 </div>
             </div>
         </div>
