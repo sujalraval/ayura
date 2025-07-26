@@ -7,57 +7,41 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(localStorage.getItem('ayura_token') || null);
 
-    // **FIXED**: Always use production API in production
-    const getApiUrl = () => {
-        if (import.meta.env.PROD) {
-            return 'https://ayuras.life/api/v1';
-        }
-        return import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-    };
+    // **FIXED**: Always use production API
+    const API_BASE_URL = import.meta.env.PROD
+        ? 'https://ayuras.life/api/v1'
+        : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1');
 
-    const API_BASE_URL = getApiUrl();
-
-    console.log('🌐 Using API URL:', API_BASE_URL);
-    console.log('🔧 Environment:', import.meta.env.MODE);
+    console.log('🌐 API URL:', API_BASE_URL);
 
     useEffect(() => {
-        console.log('🚀 AuthContext initializing...');
-
-        const localToken = localStorage.getItem('ayura_token');
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get('token');
+        const localToken = localStorage.getItem('ayura_token');
 
-        console.log('🔍 Tokens found:', {
-            localStorage: !!localToken,
-            urlParam: !!urlToken,
-            currentUrl: window.location.href
+        console.log('🔍 Auth initialization:', {
+            urlToken: !!urlToken,
+            localToken: !!localToken,
+            currentPath: window.location.pathname
         });
 
         if (urlToken) {
-            console.log('✅ Token found in URL, processing...');
+            console.log('✅ Processing URL token...');
             localStorage.setItem('ayura_token', urlToken);
             setToken(urlToken);
 
-            fetchUserData(urlToken).then(() => {
-                const redirectPath = localStorage.getItem('redirectAfterLogin');
-                console.log('🔄 Redirect path:', redirectPath);
-
-                if (redirectPath) {
-                    localStorage.removeItem('redirectAfterLogin');
-                    window.location.href = redirectPath;
-                } else {
-                    window.location.href = '/profile';
-                }
-            });
-
-            // Clean up URL
+            // Clean URL immediately
             window.history.replaceState({}, document.title, window.location.pathname);
+
+            fetchUserData(urlToken).then(() => {
+                console.log('✅ User data fetched, staying on current page');
+                // Don't redirect - stay on /profile page
+            });
         } else if (localToken) {
             console.log('🔍 Using stored token');
-            setToken(localToken);
             fetchUserData(localToken);
         } else {
-            console.log('❌ No tokens found');
+            console.log('❌ No authentication tokens found');
             setLoading(false);
         }
     }, []);
@@ -73,27 +57,23 @@ export const AuthProvider = ({ children }) => {
                 },
             });
 
-            console.log('📡 Response status:', response.status);
-
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ User data received:', data.success);
-
                 if (data.success) {
+                    console.log('✅ User authenticated:', data.data.email);
                     setUser(data.data);
-                    setToken(token);
                     localStorage.setItem('ayura_user', JSON.stringify(data.data));
                     localStorage.setItem('userEmail', data.data.email);
                 } else {
-                    console.log('❌ Invalid response data');
+                    console.log('❌ Invalid response');
                     clearAuthData();
                 }
             } else {
-                console.log('❌ Response not OK:', response.status);
+                console.log('❌ Auth failed:', response.status);
                 clearAuthData();
             }
         } catch (error) {
-            console.error('❌ Error fetching user data:', error);
+            console.error('❌ Fetch user error:', error);
             clearAuthData();
         } finally {
             setLoading(false);
@@ -109,13 +89,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signInWithGoogle = () => {
-        const currentPath = window.location.pathname;
-        console.log('🔐 Starting Google sign in from:', currentPath);
-
-        if (currentPath !== '/login') {
-            localStorage.setItem('redirectAfterLogin', currentPath);
-        }
-
+        console.log('🔐 Starting Google OAuth...');
         const authUrl = `${API_BASE_URL}/auth/google`;
         console.log('🔄 Redirecting to:', authUrl);
         window.location.href = authUrl;
@@ -123,7 +97,6 @@ export const AuthProvider = ({ children }) => {
 
     const signOut = async () => {
         try {
-            console.log('👋 Signing out...');
             if (token) {
                 await fetch(`${API_BASE_URL}/auth/logout`, {
                     method: 'POST',
@@ -137,6 +110,7 @@ export const AuthProvider = ({ children }) => {
             console.error('❌ Logout error:', error);
         } finally {
             clearAuthData();
+            window.location.href = '/login';
         }
     };
 
