@@ -20,7 +20,7 @@ const PopularTests = () => {
         const fetchPopularTests = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get("http://localhost:5000/api/v1/popular-tests/public");
+                const res = await axios.get("https://ayuras.life/api/v1/popular-tests/public");
                 if (res.data.success) {
                     setTestData(res.data.data);
                 }
@@ -159,7 +159,7 @@ const PopularTests = () => {
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
             // Then make the API call
-            await axios.delete(`http://localhost:5000/api/v1/cart/remove/${authUser.email}/${testId}`);
+            await axios.delete(`https://ayuras.life/api/v1/cart/remove/${authUser.email}/${testId}`);
             toast.info('Test removed from cart');
         } catch (err) {
             // If API call fails, revert the optimistic update
