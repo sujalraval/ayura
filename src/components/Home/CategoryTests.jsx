@@ -140,7 +140,7 @@ const CategoryTests = () => {
                 setLoading(true);
                 setError(null);
 
-                const response = await axios.get(`http://localhost:5000/api/v1/lab-tests/category/slug/${slug}`);
+                const response = await axios.get(`https://ayuras.life/api/v1/lab-tests/category/slug/${slug}`);
 
                 console.log("API Response:", response.data);
 
@@ -180,7 +180,7 @@ const CategoryTests = () => {
                 return;
             }
 
-            const response = await axios.get(`http://localhost:5000/api/v1/cart/${userEmail}`);
+            const response = await axios.get(`https://ayuras.life/api/v1/cart/${userEmail}`);
             const serverCart = response.data.items || [];
             setCart(serverCart);
             localStorage.setItem('cart', JSON.stringify(serverCart));
@@ -256,7 +256,7 @@ const CategoryTests = () => {
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
             // Then make the API call
-            await axios.post('http://localhost:5000/api/v1/cart/add', {
+            await axios.post('https://ayuras.life/api/v1/cart/add', {
                 userId: user.email,
                 test
             });
@@ -289,7 +289,7 @@ const CategoryTests = () => {
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
             // Then make the API call
-            await axios.delete(`http://localhost:5000/api/v1/cart/remove/${user.email}/${testId}`);
+            await axios.delete(`https://ayuras.life/api/v1/cart/remove/${user.email}/${testId}`);
             toast.info('Test removed from cart');
         } catch (err) {
             // If API call fails, revert the optimistic update
@@ -346,7 +346,7 @@ const CategoryTests = () => {
             localStorage.removeItem('cart');
 
             // Then make the API call
-            await axios.delete(`http://localhost:5000/api/v1/cart/clear/${user.email}`);
+            await axios.delete(`https://ayuras.life/api/v1/cart/clear/${user.email}`);
             toast.info('Cart cleared');
         } catch (err) {
             toast.error('Failed to clear cart');
