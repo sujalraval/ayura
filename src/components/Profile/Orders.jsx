@@ -54,52 +54,54 @@ const Orders = () => {
         }
     }, [user, token, API_BASE_URL]);
 
-    // Function to handle report download with better error handling
+    // Improved PDF download handler
     const handleDownloadReport = async (reportUrl) => {
         console.log('Original report URL:', reportUrl);
 
         try {
-            // Convert http to https if needed
-            const httpsUrl = reportUrl.replace('http://', 'https://');
-            console.log('HTTPS URL:', httpsUrl);
+            // Ensure HTTPS
+            let httpsUrl = reportUrl;
+            if (httpsUrl.startsWith('http://')) {
+                httpsUrl = httpsUrl.replace('http://', 'https://');
+            }
 
-            // First, try to check if the file exists
-            const checkResponse = await fetch(httpsUrl, {
-                method: 'HEAD',
-                headers: {
-                    'Accept': 'application/pdf'
+            // First, try to open in new tab
+            console.log('Opening report in new tab:', httpsUrl);
+            const newWindow = window.open(httpsUrl, '_blank');
+
+            // If the window was blocked by popup blocker, fallback to download
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                console.log('Popup blocked, trying direct download');
+                const response = await fetch(httpsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/pdf'
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch PDF');
                 }
-            });
 
-            console.log('File check response:', {
-                status: checkResponse.status,
-                headers: Object.fromEntries(checkResponse.headers.entries())
-            });
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
 
-            if (checkResponse.ok) {
-                // File exists, open in new tab
-                console.log('File exists, opening in new tab');
-                window.open(httpsUrl, '_blank');
-            } else {
-                // Try direct download
-                console.log('Trying direct download...');
                 const link = document.createElement('a');
-                link.href = httpsUrl;
+                link.href = blobUrl;
                 link.download = `report_${Date.now()}.pdf`;
-                link.target = '_blank';
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
+
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 100);
             }
         } catch (error) {
             console.error('Error accessing report:', error);
-
-            // Fallback: try to open in new tab anyway
-            const httpsUrl = reportUrl.replace('http://', 'https://');
-            window.open(httpsUrl, '_blank');
-
-            // Show user-friendly error
-            alert('Report download may take a moment. If it doesn\'t open, please try again or contact support.');
+            alert('Failed to open report. Please try again or contact support.');
         }
     };
 
