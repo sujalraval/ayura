@@ -129,9 +129,19 @@ const CategoryTests = () => {
     const [categoryName, setCategoryName] = useState('');
     const detailPanelRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const { user } = useAuth();
+    const { user, token, API_BASE_URL } = useAuth();
 
-    // Fetch tests by category slug
+    // Open and close detail functions
+    const openDetail = (test) => {
+        setSelectedTest(test);
+        setIsDetailOpen(true);
+    };
+
+    const closeDetail = () => {
+        setIsDetailOpen(false);
+        setSelectedTest(null);
+    };
+
     useEffect(() => {
         if (!slug) return;
 
@@ -139,19 +149,12 @@ const CategoryTests = () => {
             try {
                 setLoading(true);
                 setError(null);
-
-                const response = await axios.get(`https://ayuras.life/api/v1/lab-tests/category/slug/${slug}`);
-
-                console.log("API Response:", response.data);
+                const response = await axios.get(`${API_BASE_URL}/lab-tests/category/slug/${slug}`);
 
                 if (response.data && Array.isArray(response.data)) {
                     setTests(response.data);
-
-                    if (response.data.length > 0) {
-                        setCategoryName(response.data[0].category);
-                    } else {
-                        setCategoryName(slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-                    }
+                    setCategoryName(response.data[0]?.category ||
+                        slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
                 } else {
                     setTests([]);
                     setError("No tests found for this category");
@@ -166,9 +169,8 @@ const CategoryTests = () => {
         };
 
         fetchTests();
-    }, [slug]);
+    }, [slug, API_BASE_URL]);
 
-    // Fetch cart data
     const fetchCart = useCallback(async () => {
         try {
             setCartLoading(true);
@@ -180,8 +182,10 @@ const CategoryTests = () => {
                 return;
             }
 
-            const response = await axios.get(`https://ayuras.life/api/v1/cart/${userEmail}`);
-            const serverCart = response.data.items || [];
+            const response = await axios.get(`${API_BASE_URL}/cart/${userEmail}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const serverCart = response.data?.items || [];
             setCart(serverCart);
             localStorage.setItem('cart', JSON.stringify(serverCart));
         } catch (err) {
@@ -190,49 +194,19 @@ const CategoryTests = () => {
             if (cachedCart) {
                 try {
                     setCart(JSON.parse(cachedCart));
-                } catch (parseError) {
+                } catch {
                     setCart([]);
                     localStorage.removeItem('cart');
                 }
-            } else {
-                setCart([]);
             }
         } finally {
             setCartLoading(false);
         }
-    }, [user?.email]);
+    }, [user?.email, token, API_BASE_URL]);
 
-    // Fetch cart when component mounts and when user changes
     useEffect(() => {
         fetchCart();
     }, [fetchCart]);
-
-    // Close detail on outside click
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (isDetailOpen && detailPanelRef.current && !detailPanelRef.current.contains(event.target)) {
-                closeDetail();
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isDetailOpen]);
-
-    // Prevent scroll when detail is open
-    useEffect(() => {
-        document.body.style.overflow = isDetailOpen ? 'hidden' : 'unset';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isDetailOpen]);
-
-    const openDetail = (test) => {
-        setSelectedTest(test);
-        setIsDetailOpen(true);
-    };
-
-    const closeDetail = () => {
-        setIsDetailOpen(false);
-        setTimeout(() => setSelectedTest(null), 300);
-    };
 
     const addToCart = async (test) => {
         if (!user) {
@@ -241,33 +215,25 @@ const CategoryTests = () => {
             return navigate('/login');
         }
 
-        if (isInCart(test._id)) {
-            toast.info('Test already in cart');
-            return;
-        }
-
         try {
             setCartLoading(true);
-
-            // Optimistically update the UI first
             const newCartItem = { ...test, quantity: 1, testId: test._id };
             const updatedCart = [...cart, newCartItem];
             setCart(updatedCart);
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
-            // Then make the API call
-            await axios.post('https://ayuras.life/api/v1/cart/add', {
+            await axios.post(`${API_BASE_URL}/cart/add`, {
                 userId: user.email,
                 test
+            }, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
-
             toast.success('Test added to cart!');
         } catch (err) {
-            // If API call fails, revert the optimistic update
-            setCart(prevCart => prevCart.filter(item => item._id !== test._id));
+            setCart(cart.filter(item => item._id !== test._id));
             localStorage.setItem('cart', JSON.stringify(cart.filter(item => item._id !== test._id)));
             toast.error('Failed to add test to cart');
-            console.error("Error adding to cart:", err.response?.data || err.message);
+            console.error("Error adding to cart:", err);
         } finally {
             setCartLoading(false);
         }
@@ -282,20 +248,18 @@ const CategoryTests = () => {
 
         try {
             setCartLoading(true);
-
-            // Optimistically update the UI first
             const updatedCart = cart.filter(item => item._id !== testId && item.testId !== testId);
             setCart(updatedCart);
             localStorage.setItem('cart', JSON.stringify(updatedCart));
 
-            // Then make the API call
-            await axios.delete(`https://ayuras.life/api/v1/cart/remove/${user.email}/${testId}`);
+            // Updated to match backend route: DELETE /api/v1/cart/remove/:userId/:testId
+            await axios.delete(`${API_BASE_URL}/cart/remove/${user.email}/${testId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
             toast.info('Test removed from cart');
         } catch (err) {
-            // If API call fails, revert the optimistic update
             toast.error('Failed to remove test from cart');
-            console.error("Error removing from cart:", err.response?.data || err.message);
-            // Refresh cart from server to ensure consistency
+            console.error("Error removing from cart:", err);
             await fetchCart();
         } finally {
             setCartLoading(false);
@@ -346,7 +310,9 @@ const CategoryTests = () => {
             localStorage.removeItem('cart');
 
             // Then make the API call
-            await axios.delete(`https://ayuras.life/api/v1/cart/clear/${user.email}`);
+            await axios.delete(`${API_BASE_URL}/cart/clear/${user.email}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
             toast.info('Cart cleared');
         } catch (err) {
             toast.error('Failed to clear cart');

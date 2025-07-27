@@ -23,7 +23,7 @@ const CartPage = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [highestStepReached, setHighestStepReached] = useState(1);
     const [cartItems, setCartItems] = useState([]);
-    const [orderDetails, setOrderDetails] = useState(null); // Add this state
+    const [orderDetails, setOrderDetails] = useState(null);
     const [patientInfo, setPatientInfo] = useState({
         name: '',
         relation: '',
@@ -38,19 +38,27 @@ const CartPage = () => {
         timeSlot: '',
     });
     const [paymentMethod] = useState("COD");
-    const { user: authUser, token } = useAuth();
+    const { user: authUser, token, API_BASE_URL } = useAuth();
     const navigate = useNavigate();
 
-    // Calculate total price dynamically
     const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
 
     const handleRemoveItem = async (itemId) => {
         try {
-            const userId = localStorage.getItem('userEmail');
-            await axios.delete('http://localhost:5000/api/v1/cart/remove', {
-                data: { userId, testId: itemId }
+            const userId = authUser?.email || localStorage.getItem('userEmail');
+            if (!userId) {
+                console.error('No user ID found');
+                return;
+            }
+
+            // Updated to match backend route: DELETE /api/v1/cart/remove/:userId/:testId
+            await axios.delete(`${API_BASE_URL}/cart/remove/${userId}/${itemId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
-            setCartItems(prevItems => prevItems.filter(item => item.testId !== itemId));
+
+            setCartItems(prevItems => prevItems.filter(item =>
+                item.testId !== itemId && item._id !== itemId && item.id !== itemId
+            ));
         } catch (err) {
             console.error("Error removing item", err);
             alert("Failed to remove item. Please try again.");
@@ -73,22 +81,26 @@ const CartPage = () => {
 
     const handlePlaceOrder = async () => {
         try {
-            const userId = localStorage.getItem('userEmail');
+            // Ensure user is authenticated
+            if (!authUser || !token) {
+                localStorage.setItem('redirectAfterLogin', window.location.pathname);
+                return navigate('/login');
+            }
 
-            // Validate that we have cart items with required fields
-            if (!cartItems || cartItems.length === 0) {
-                alert("Your cart is empty. Please add items before placing an order.");
-                return;
+            const userId = authUser.email || localStorage.getItem('userEmail');
+            if (!userId) {
+                alert("Please login to place an order");
+                return navigate('/login');
             }
 
             const orderPayload = {
                 userId,
                 patientInfo: {
                     ...patientInfo,
-                    email: patientInfo.email || userId, // Ensure email is present
+                    email: patientInfo.email || userId,
                 },
                 cartItems: cartItems.map(item => ({
-                    testId: item.testId || item._id || item.id, // Ensure testId is present
+                    testId: item.testId || item._id || item.id,
                     testName: item.name || item.testName,
                     lab: item.lab || 'Default Lab',
                     price: item.price
@@ -97,32 +109,35 @@ const CartPage = () => {
                 paymentMethod,
             };
 
-            console.log('Order payload:', orderPayload); // Debug log
+            console.log('Placing order with payload:', orderPayload);
 
-            const res = await axios.post('http://localhost:5000/api/v1/orders/place', orderPayload, {
+            const res = await axios.post(`${API_BASE_URL}/orders/place`, orderPayload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            // Store order details for confirmation page
+            console.log('Order response:', res.data);
+
             setOrderDetails({
-                orderId: res.data.orderId,
-                totalPrice: totalPrice,
-                cartItems: [...cartItems], // Keep a copy of cart items
+                orderId: res.data.order?._id || res.data.orderId,
+                totalPrice,
+                cartItems: [...cartItems],
                 patientInfo: { ...patientInfo }
             });
 
             // Clear cart after successful order
-            await axios.delete(`http://localhost:5000/api/v1/cart/clear/${userId}`);
+            await axios.delete(`${API_BASE_URL}/cart/clear/${userId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
 
-            // Don't clear cartItems immediately - we need them for the confirmation page
-            localStorage.removeItem('cart');
             setCurrentStep(5);
         } catch (error) {
-            console.error("Order placement failed", error.response?.data || error.message);
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || "Failed to place order. Please try again.";
+            console.error("Order placement failed", error);
+            const errorMessage = error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Failed to place order. Please try again.";
             alert(errorMessage);
         }
     };
@@ -130,16 +145,18 @@ const CartPage = () => {
     const validateCurrentStep = () => {
         switch (currentStep) {
             case 2:
-                return patientInfo.name && patientInfo.email && patientInfo.phone && patientInfo.dob && patientInfo.gender && patientInfo.relation;
+                return patientInfo.name && patientInfo.email && patientInfo.phone &&
+                    patientInfo.dob && patientInfo.gender && patientInfo.relation;
             case 3:
-                return patientInfo.address && patientInfo.city && patientInfo.state && patientInfo.pincode && patientInfo.timeSlot;
+                return patientInfo.address && patientInfo.city && patientInfo.state &&
+                    patientInfo.pincode && patientInfo.timeSlot;
             default:
                 return true;
         }
     };
 
     const handleNextStep = async () => {
-        if (!authUser) {
+        if (!authUser || !token) {
             localStorage.setItem('redirectAfterLogin', window.location.pathname);
             return navigate('/login');
         }
@@ -162,11 +179,13 @@ const CartPage = () => {
     useEffect(() => {
         const fetchCartItems = async () => {
             try {
-                const userId = localStorage.getItem('userEmail');
+                const userId = authUser?.email || localStorage.getItem('userEmail');
                 if (!userId) return;
 
-                const res = await axios.get(`http://localhost:5000/api/v1/cart/${userId}`);
-                console.log('Fetched cart items:', res.data.items); // Debug log
+                const res = await axios.get(`${API_BASE_URL}/cart/${userId}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                console.log('Fetched cart items:', res.data.items);
                 setCartItems(res.data.items || []);
             } catch (err) {
                 console.error("Failed to load cart", err);
@@ -177,7 +196,7 @@ const CartPage = () => {
         if (currentStep !== 5) {
             fetchCartItems();
         }
-    }, [currentStep]);
+    }, [currentStep, API_BASE_URL, authUser, token]);
 
     // Auto-populate email if user is logged in
     useEffect(() => {
@@ -346,229 +365,3 @@ const CartPage = () => {
 };
 
 export default CartPage;
-
-
-
-// import React, { useEffect, useState } from 'react';
-// import {
-//     FaSyringe,
-//     FaBoxOpen,
-//     FaUser,
-//     FaMapMarker,
-//     FaWallet,
-//     FaCheckCircle
-// } from 'react-icons/fa';
-// import { useAuth } from '../AuthContext';
-// import { useNavigate } from 'react-router-dom';
-// import CartReview from './CartReview';
-// import PatientInfoForm from './PatientInfoForm';
-// import AddressForm from './AddressForm';
-// import PaymentOptions from './PaymentOptions';
-// import Stepper from './Stepper';
-// import Sidebar from './Sidebar';
-// import OrderConfirmation from './OrderConfirmation';
-// import axios from 'axios';
-
-// const CartPage = () => {
-//     const [currentStep, setCurrentStep] = useState(1);
-//     const [highestStepReached, setHighestStepReached] = useState(1);
-//     const [cartItems, setCartItems] = useState([]);
-//     const [patientInfo, setPatientInfo] = useState({
-//         name: '',
-//         relation: '',
-//         email: '',
-//         phone: '',
-//         dob: '',
-//         address: '',
-//         city: '',
-//         state: '',
-//         pincode: '',
-//         gender: '',
-//         timeSlot: '',
-//     });
-//     const [paymentMethod] = useState("COD");
-//     const { user: authUser, token } = useAuth();
-//     const navigate = useNavigate();
-
-//     const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0);
-
-//     const handleRemoveItem = async (itemId) => {
-//         try {
-//             const userId = localStorage.getItem('userEmail');
-//             await axios.delete('http://localhost:5000/api/v1/cart/remove', {
-//                 data: { userId, testId: itemId }
-//             });
-//             setCartItems(prevItems => prevItems.filter(item => item.testId !== itemId));
-//         } catch (err) {
-//             console.error("Error removing item", err);
-//             alert("Failed to remove item. Please try again.");
-//         }
-//     };
-
-//     const handleInputChange = (e) => {
-//         const { name, value } = e.target;
-//         setPatientInfo(prev => ({
-//             ...prev,
-//             [name]: value
-//         }));
-//     };
-
-//     const handlePrevStep = () => setCurrentStep(prev => Math.max(1, prev - 1));
-
-//     const handleStepClick = (stepId) => {
-//         if (stepId <= highestStepReached) setCurrentStep(stepId);
-//     };
-
-//     const handlePlaceOrder = async () => {
-//         try {
-//             const userId = localStorage.getItem('userEmail');
-//             const orderPayload = {
-//                 userId,
-//                 patientInfo,
-//                 cartItems: cartItems.map(item => ({
-//                     testName: item.name,
-//                     lab: item.lab || 'Default Lab',
-//                     price: item.price
-//                 })),
-//                 totalPrice,
-//                 paymentMethod,
-//             };
-
-//             const res = await axios.post('http://localhost:5000/api/v1/orders/place', orderPayload, {
-//                 headers: { Authorization: `Bearer ${token}` }
-//             });
-
-//             await axios.delete(`http://localhost:5000/api/v1/cart/clear/${userId}`);
-//             setCartItems([]);
-//             localStorage.removeItem('cart');
-//             setCurrentStep(5);
-//         } catch (error) {
-//             console.error("Order placement failed", error.response?.data || error.message);
-//             alert("Failed to place order. Please try again.");
-//         }
-//     };
-
-//     const validateCurrentStep = () => {
-//         switch (currentStep) {
-//             case 2:
-//                 return patientInfo.name && patientInfo.email && patientInfo.phone && patientInfo.dob && patientInfo.gender;
-//             case 3:
-//                 return patientInfo.address && patientInfo.city && patientInfo.state && patientInfo.pincode && patientInfo.timeSlot;
-//             default:
-//                 return true;
-//         }
-//     };
-
-//     const handleNextStep = async () => {
-//         if (!authUser) {
-//             localStorage.setItem('redirectAfterLogin', window.location.pathname);
-//             return navigate('/login');
-//         }
-
-//         if (!validateCurrentStep()) {
-//             alert("Please fill in all required fields before proceeding.");
-//             return;
-//         }
-
-//         if (currentStep === 4) {
-//             await handlePlaceOrder();
-//             return;
-//         }
-
-//         const nextStep = Math.min(5, currentStep + 1);
-//         setCurrentStep(nextStep);
-//         setHighestStepReached(prev => Math.max(prev, nextStep));
-//     };
-
-//     useEffect(() => {
-//         const fetchCartItems = async () => {
-//             try {
-//                 const userId = localStorage.getItem('userEmail');
-//                 if (!userId) return;
-
-//                 const res = await axios.get(`http://localhost:5000/api/v1/cart/${userId}`);
-//                 setCartItems(res.data.items || []);
-//             } catch (err) {
-//                 console.error("Failed to load cart", err);
-//             }
-//         };
-
-//         fetchCartItems();
-//     }, []);
-
-//     const handleCloseMobileForm = () => setCurrentStep(1);
-
-//     const steps = [
-//         { id: 1, title: 'Cart Review', icon: FaBoxOpen },
-//         { id: 2, title: 'Patient Info', icon: FaUser },
-//         { id: 3, title: 'Address & Time', icon: FaMapMarker },
-//         { id: 4, title: 'Payment', icon: FaWallet },
-//         { id: 5, title: 'Confirmation', icon: FaCheckCircle }
-//     ];
-
-//     if (cartItems.length === 0 && currentStep !== 5) {
-//         return (
-//             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//                 <div className="text-center">
-//                     <FaBoxOpen className="mx-auto text-6xl text-gray-300 mb-4" />
-//                     <h2 className="text-2xl font-semibold text-gray-600 mb-2">Your Cart is Empty</h2>
-//                     <p className="text-gray-500 mb-6">It looks like you haven't added any lab tests yet.</p>
-//                     <button
-//                         onClick={() => navigate('/tests')}
-//                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-//                     >
-//                         Browse Lab Tests
-//                     </button>
-//                 </div>
-//             </div>
-//         );
-//     }
-
-//     return (
-//         <div className="min-h-screen bg-gray-50">
-//             <div className="container mx-auto px-4 py-8">
-//                 <Stepper
-//                     steps={steps}
-//                     currentStep={currentStep}
-//                     highestStepReached={highestStepReached}
-//                     onStepClick={handleStepClick}
-//                 />
-
-//                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-//                     <div className="lg:col-span-2">
-//                         {currentStep === 1 && (
-//                             <CartReview
-//                                 cartItems={cartItems}
-//                                 onRemoveItem={handleRemoveItem}
-//                                 onNextStep={handleNextStep}
-//                                 totalPrice={totalPrice}
-//                             />
-//                         )}
-//                         {currentStep === 5 && (
-//                             <OrderConfirmation
-//                                 totalPrice={totalPrice}
-//                                 onBackToCart={() => navigate('/')}
-//                             />
-//                         )}
-//                     </div>
-
-//                     {(currentStep >= 2 && currentStep <= 4) && (
-//                         <div className="lg:col-span-1">
-//                             <Sidebar
-//                                 currentStep={currentStep}
-//                                 patientInfo={patientInfo}
-//                                 onInputChange={handleInputChange}
-//                                 onBack={handlePrevStep}
-//                                 onNext={handleNextStep}
-//                                 timeSlot={patientInfo.timeSlot}
-//                                 handleCloseMobileForm={handleCloseMobileForm}
-//                             />
-//                         </div>
-//                     )}
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default CartPage;
