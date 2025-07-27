@@ -54,15 +54,53 @@ const Orders = () => {
         }
     }, [user, token, API_BASE_URL]);
 
-    // Function to handle report download
-    const handleDownloadReport = (reportUrl) => {
-        console.log('Downloading report:', reportUrl);
+    // Function to handle report download with better error handling
+    const handleDownloadReport = async (reportUrl) => {
+        console.log('Original report URL:', reportUrl);
 
-        // Convert http to https if needed
-        const httpsUrl = reportUrl.replace('http://', 'https://');
+        try {
+            // Convert http to https if needed
+            const httpsUrl = reportUrl.replace('http://', 'https://');
+            console.log('HTTPS URL:', httpsUrl);
 
-        // Open in new tab for better user experience
-        window.open(httpsUrl, '_blank');
+            // First, try to check if the file exists
+            const checkResponse = await fetch(httpsUrl, {
+                method: 'HEAD',
+                headers: {
+                    'Accept': 'application/pdf'
+                }
+            });
+
+            console.log('File check response:', {
+                status: checkResponse.status,
+                headers: Object.fromEntries(checkResponse.headers.entries())
+            });
+
+            if (checkResponse.ok) {
+                // File exists, open in new tab
+                console.log('File exists, opening in new tab');
+                window.open(httpsUrl, '_blank');
+            } else {
+                // Try direct download
+                console.log('Trying direct download...');
+                const link = document.createElement('a');
+                link.href = httpsUrl;
+                link.download = `report_${Date.now()}.pdf`;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error('Error accessing report:', error);
+
+            // Fallback: try to open in new tab anyway
+            const httpsUrl = reportUrl.replace('http://', 'https://');
+            window.open(httpsUrl, '_blank');
+
+            // Show user-friendly error
+            alert('Report download may take a moment. If it doesn\'t open, please try again or contact support.');
+        }
     };
 
     // Current orders are those without reports or not in final states
@@ -105,8 +143,8 @@ const Orders = () => {
             <div className="flex border-b border-gray-200 mb-6">
                 <button
                     className={`py-2 px-4 font-medium ${activeTab === "current"
-                            ? "border-b-2 border-blue-500 text-blue-600"
-                            : "text-gray-500 hover:text-gray-700"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
                         }`}
                     onClick={() => setActiveTab("current")}
                 >
@@ -114,8 +152,8 @@ const Orders = () => {
                 </button>
                 <button
                     className={`py-2 px-4 font-medium ${activeTab === "previous"
-                            ? "border-b-2 border-blue-500 text-blue-600"
-                            : "text-gray-500 hover:text-gray-700"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
                         }`}
                     onClick={() => setActiveTab("previous")}
                 >
@@ -156,22 +194,22 @@ const Orders = () => {
                                 <div className="text-right">
                                     <span
                                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${order.status === "pending"
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : order.status === "approved"
-                                                    ? "bg-blue-100 text-blue-800"
-                                                    : order.status === "sample collected"
-                                                        ? "bg-purple-100 text-purple-800"
-                                                        : order.status === "processing"
-                                                            ? "bg-orange-100 text-orange-800"
-                                                            : order.status === "report submitted"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : order.status === "approved"
+                                                ? "bg-blue-100 text-blue-800"
+                                                : order.status === "sample collected"
+                                                    ? "bg-purple-100 text-purple-800"
+                                                    : order.status === "processing"
+                                                        ? "bg-orange-100 text-orange-800"
+                                                        : order.status === "report submitted"
+                                                            ? "bg-green-100 text-green-800"
+                                                            : order.status === "completed"
                                                                 ? "bg-green-100 text-green-800"
-                                                                : order.status === "completed"
-                                                                    ? "bg-green-100 text-green-800"
-                                                                    : order.status === "cancelled"
+                                                                : order.status === "cancelled"
+                                                                    ? "bg-red-100 text-red-800"
+                                                                    : order.status === "denied"
                                                                         ? "bg-red-100 text-red-800"
-                                                                        : order.status === "denied"
-                                                                            ? "bg-red-100 text-red-800"
-                                                                            : "bg-gray-100 text-gray-800"
+                                                                        : "bg-gray-100 text-gray-800"
                                             }`}
                                     >
                                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -250,15 +288,20 @@ const Orders = () => {
                             {/* Report Download Button */}
                             {order.reportUrl && (
                                 <div className="mt-4 pt-4 border-t border-gray-200">
-                                    <button
-                                        onClick={() => handleDownloadReport(order.reportUrl)}
-                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        Download Report
-                                    </button>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm text-gray-600 mb-2">Report URL: {order.reportUrl}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDownloadReport(order.reportUrl)}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Download Report
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
