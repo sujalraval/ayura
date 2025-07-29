@@ -52,7 +52,7 @@ function Profile() {
             {/* Profile Header with Tabs */}
             <div className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 sm:pt-6 pb-3 sm:pb-4">
+                    {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 sm:pt-6 pb-3 sm:pb-4">
                         <div className="mb-4 sm:mb-0">
                             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Health Profile</h1>
                             <p className="text-sm text-gray-500 mt-1">
@@ -66,7 +66,7 @@ function Profile() {
                                 </span>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Navigation Tabs */}
                     <div className="border-b border-gray-200">
