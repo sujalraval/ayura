@@ -3,11 +3,11 @@ import { Search, Phone, MessageCircle } from 'lucide-react';
 
 // SVG Components
 const CartIcon = () => (
-    <img src="/4.svg" alt="Cart" className="h-10 w-10" />
+    <img src="/4.png" alt="Cart" className="h-10 w-10" />
 );
 
 const ProfileIcon = () => (
-    <img src="/1.svg" alt="Profile" className="h-10 w-10" />
+    <img src="/1.png" alt="Profile" className="h-10 w-10" />
 );
 
 const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }, filteredTests = [] }) => {
