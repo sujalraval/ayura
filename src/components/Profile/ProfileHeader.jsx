@@ -8,8 +8,6 @@ const ProfileHeader = () => {
         fullName: "",
         contact: "",
         email: "",
-        dob: "",
-        gender: "",
     });
     const [isEditing, setIsEditing] = useState(false);
     const [tempData, setTempData] = useState(userData);
@@ -20,12 +18,9 @@ const ProfileHeader = () => {
                 fullName: user.name || user.displayName || "",
                 contact: user.contact || "",
                 email: user.email || "",
-                dob: user.dob || "",
-                gender: user.gender || "",
             };
             setUserData(newUserData);
             setTempData(newUserData);
-
             if (user.photoURL || user.picture || user.avatar) {
                 setProfileImage(user.photoURL || user.picture || user.avatar);
             }
@@ -42,7 +37,10 @@ const ProfileHeader = () => {
     };
 
     const handleFieldChange = (field, value) => {
-        setTempData((prev) => ({ ...prev, [field]: value }));
+        setTempData((prev) => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     const handleSave = async () => {
@@ -59,14 +57,13 @@ const ProfileHeader = () => {
                 body: JSON.stringify({
                     name: tempData.fullName,
                     phone: tempData.contact,
-                    dateOfBirth: tempData.dob,
-                    gender: tempData.gender,
                 }),
             });
         } catch (error) {
             alert("Error updating profile.");
         }
     };
+
     const handleCancel = () => {
         setTempData(userData);
         setIsEditing(false);
@@ -74,140 +71,130 @@ const ProfileHeader = () => {
 
     if (!user) {
         return (
-            <div className="animate-pulse">Loading...</div>
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                <div className="animate-pulse flex items-center space-x-4">
+                    <div className="rounded-full bg-gray-300 h-16 w-16 sm:h-20 sm:w-20"></div>
+                    <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     return (
-        <main className="flex flex-col lg:flex-row items-start gap-8 bg-white rounded-2xl p-6 shadow-lg mb-8 w-full">
-            {/* Profile image */}
-            <div className="relative w-32 h-32 mx-auto lg:mx-0">
-                <div className="group relative w-full h-full rounded-full overflow-hidden">
-                    <img
-                        src={profileImage}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                            e.target.src = "/defaultProfile.png";
-                        }}
-                    />
-                    {isEditing && (
-                        <>
-                            <label htmlFor="upload-photo" className="absolute bottom-1 right-1 bg-red-500 p-2 rounded-full cursor-pointer">
-                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                        d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
-                                    />
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-0">Profile Information</h2>
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-[#E23744] bg-[#E23744]/10 hover:bg-[#E23744]/20 transition-colors duration-200"
+                    >
+                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        {isEditing ? "Cancel" : "Edit Profile"}
+                    </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    {/* Profile Image */}
+                    <div className="relative flex-shrink-0">
+                        <img
+                            src={profileImage}
+                            alt="Profile"
+                            className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-full object-cover border-4 border-white shadow-lg"
+                        />
+                        {isEditing && (
+                            <label className="absolute -bottom-2 -right-2 bg-[#E23744] rounded-full p-2 cursor-pointer hover:bg-[#c5313d] transition-colors duration-200 shadow-lg">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                />
                             </label>
-                            <input
-                                type="file"
-                                id="upload-photo"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageUpload}
-                            />
-                        </>
-                    )}
-                </div>
-            </div>
-            {/* Profile Info Section */}
-            <div className="flex-1 w-full">
-                <div className="mb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <input
-                            type="text"
-                            value={isEditing ? tempData.fullName : userData.fullName}
-                            onChange={e => handleFieldChange("fullName", e.target.value)}
-                            placeholder="Enter your full name"
-                            className={`text-3xl font-bold bg-transparent border-b-2 
-                ${isEditing ? "border-red-500" : "border-transparent"}
-                focus:border-red-500 outline-none transition-colors duration-300`}
-                            readOnly={!isEditing}
-                        />
-                        <p className="text-gray-500 text-sm">ID: {user.id || "#HD12345"}</p>
+                        )}
                     </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Contact Number */}
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                        <label className="block text-sm text-gray-500 mb-1">Contact Number</label>
-                        <input
-                            type="tel"
-                            value={isEditing ? tempData.contact : userData.contact}
-                            onChange={e => handleFieldChange("contact", e.target.value)}
-                            placeholder="Enter contact number"
-                            className="bg-transparent border-b-2 focus:border-red-500 outline-none w-full"
-                            readOnly={!isEditing}
-                        />
-                    </div>
-                    {/* Email */}
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                        <label className="block text-sm text-gray-500 mb-1">Email Address</label>
-                        <input
-                            type="email"
-                            value={isEditing ? tempData.email : userData.email}
-                            onChange={e => handleFieldChange("email", e.target.value)}
-                            placeholder="Enter email address"
-                            className="bg-transparent border-b-2 focus:border-red-500 outline-none w-full"
-                            readOnly
-                        />
-                    </div>
-                    {/* Date of Birth */}
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                        <label className="block text-sm text-gray-500 mb-1">Date of Birth</label>
-                        <input
-                            type="date"
-                            value={isEditing ? tempData.dob : userData.dob}
-                            onChange={e => handleFieldChange("dob", e.target.value)}
-                            className="bg-transparent w-full outline-none"
-                            readOnly={!isEditing}
-                        />
-                    </div>
-                    {/* Gender */}
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                        <label className="block text-sm text-gray-500 mb-1">Gender</label>
-                        {isEditing ? (
-                            <select
-                                value={tempData.gender}
-                                onChange={e => handleFieldChange("gender", e.target.value)}
-                                className="bg-transparent w-full outline-none"
-                            >
-                                <option value="">Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                        ) : (
-                            <p>{userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1) : "Not specified"}</p>
+
+                    {/* Profile Details */}
+                    <div className="flex-1 w-full sm:w-auto min-w-0">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            {/* Full Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={tempData.fullName}
+                                        onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E23744] focus:border-transparent"
+                                        placeholder="Enter full name"
+                                    />
+                                ) : (
+                                    <p className="text-sm sm:text-base text-gray-900 truncate">{userData.fullName || "Not specified"}</p>
+                                )}
+                            </div>
+
+                            {/* Contact Number */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                                {isEditing ? (
+                                    <input
+                                        type="tel"
+                                        value={tempData.contact}
+                                        onChange={(e) => handleFieldChange("contact", e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E23744] focus:border-transparent"
+                                        placeholder="Enter contact number"
+                                    />
+                                ) : (
+                                    <p className="text-sm sm:text-base text-gray-900 truncate">{userData.contact || "Not specified"}</p>
+                                )}
+                            </div>
+
+                            {/* Email Address */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <p className="text-sm sm:text-base text-gray-900 truncate">{userData.email || "Not specified"}</p>
+                                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                            </div>
+
+                            {/* User ID */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                                <p className="text-sm sm:text-base text-gray-600 font-mono truncate">
+                                    ID: {user.id || "#HD12345"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        {isEditing && (
+                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+                                <button
+                                    onClick={handleSave}
+                                    className="w-full sm:w-auto px-4 py-2 bg-[#E23744] text-white text-sm font-medium rounded-md hover:bg-[#c5313d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E23744] transition-colors duration-200"
+                                >
+                                    Save Changes
+                                </button>
+                                <button
+                                    onClick={handleCancel}
+                                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
-                <div className="flex justify-end mt-6 gap-4">
-                    {isEditing ? (
-                        <>
-                            <button onClick={handleCancel}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
-                                Cancel
-                            </button>
-                            <button onClick={handleSave}
-                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                                Save Changes
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            onClick={() => {
-                                setTempData(userData);
-                                setIsEditing(true);
-                            }}
-                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                            Edit Profile
-                        </button>
-                    )}
-                </div>
             </div>
-        </main>
+        </div>
     );
 };
 

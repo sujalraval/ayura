@@ -5,6 +5,7 @@ import HealthHistory from '../components/Profile/HealthHistory';
 import HealthInsights from '../components/Profile/HealthInsights';
 import FamilyHealth from '../components/Profile/FamilyHealth';
 import Orders from '../components/Profile/Orders';
+
 function Profile() {
     const { user, signOut } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -51,16 +52,16 @@ function Profile() {
             {/* Profile Header with Tabs */}
             <div className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between pt-6 pb-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">My Health Profile</h1>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 sm:pt-6 pb-3 sm:pb-4">
+                        <div className="mb-4 sm:mb-0">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Health Profile</h1>
                             <p className="text-sm text-gray-500 mt-1">
                                 Welcome back, {user.name || user.displayName || 'User'}!
                             </p>
                         </div>
-                        <div className="mt-4 md:mt-0">
-                            <div className="flex items-center space-x-2">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E23744]/10 text-[#E23744]">
+                        <div className="flex-shrink-0">
+                            <div className="flex items-center">
+                                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-[#E23744]/10 text-[#E23744] truncate max-w-xs sm:max-w-none">
                                     {user.email}
                                 </span>
                             </div>
@@ -69,15 +70,15 @@ function Profile() {
 
                     {/* Navigation Tabs */}
                     <div className="border-b border-gray-200">
-                        <nav className="-mb-px flex space-x-8 overflow-x-auto">
-                            {['overview', 'orders', 'history', 'family', 'insights'].map((tab) => (
+                        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto scrollbar-hide">
+                            {['overview', 'orders', 'family'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab
-                                        ? 'border-[#E23744] text-[#E23744]'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                        }`}
+                                    className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab
+                                            ? 'border-[#E23744] text-[#E23744]'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        } transition-colors duration-200`}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                                 </button>
@@ -87,38 +88,50 @@ function Profile() {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 {/* Tab Content */}
-                <div className="space-y-8">
+                <div className="space-y-6 sm:space-y-8">
                     {activeTab === 'overview' && (
                         <>
                             <ProfileHeader />
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <HealthHistory showOnlyRecent={true} />
-                                <HealthInsights />
+
+                            {/* Overview Grid - Responsive Layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                                {/* Recent Orders - Takes 2 columns on large screens */}
+                                <div className="lg:col-span-2">
+                                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
+                                        <HealthHistory showOnlyRecent={true} />
+                                    </div>
+                                </div>
+
+                                {/* Health Insights - Takes 1 column on large screens */}
+                                <div className="lg:col-span-1">
+                                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Health Insights</h3>
+                                        <HealthInsights />
+                                    </div>
+                                </div>
                             </div>
                         </>
                     )}
 
-                    {activeTab === 'history' && <HealthHistory expanded={true} />}
-                    {activeTab === 'family' && <FamilyHealth />}
-                    {activeTab === 'insights' && <HealthInsights expanded={true} />}
                     {activeTab === 'orders' && <Orders />}
-
+                    {activeTab === 'family' && <FamilyHealth />}
                 </div>
 
-                {/* Logout Card */}
-                <div className="mt-12 max-w-md mx-auto">
-                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-                        <div className="p-6 sm:p-8">
+                {/* Logout Card - Responsive */}
+                <div className="mt-8 sm:mt-12 max-w-sm sm:max-w-md mx-auto">
+                    <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                        <div className="p-4 sm:p-6 lg:p-8">
                             <div className="text-center">
-                                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#E23744]/10 mb-4">
-                                    <svg className="h-6 w-6 text-[#E23744]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="mx-auto flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#E23744]/10 mb-3 sm:mb-4">
+                                    <svg className="h-5 w-5 sm:h-6 sm:w-6 text-[#E23744]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">End Session</h3>
-                                <p className="text-sm text-gray-500 mb-6">
+                                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1">End Session</h3>
+                                <p className="text-sm text-gray-500 mb-4 sm:mb-6">
                                     Secure logout from your health account
                                 </p>
 

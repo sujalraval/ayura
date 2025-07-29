@@ -36,7 +36,7 @@ const HealthHistory = ({ expanded = false, showOnlyRecent = false }) => {
                     return;
                 }
 
-                const response = await axios.get('http://localhost:5000/api/v1/orders/user', {
+                const response = await axios.get('https://ayuras.life/api/v1/orders/user', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -203,7 +203,7 @@ const HealthHistory = ({ expanded = false, showOnlyRecent = false }) => {
                 return;
             }
 
-            const response = await axios.get(`http://localhost:5000/api/orders/download-report/${test.id}`, {
+            const response = await axios.get(`https://ayuras.life/api/orders/download-report/${test.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 responseType: 'blob'
             });

@@ -127,14 +127,14 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                     <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 shadow-lg">
                         <div className="flex justify-around items-center py-3">
                             <a
-                                href="tel:+7779064659"
+                                href="tel:+91 7779064659"
                                 className="flex flex-col items-center text-xs text-gray-600 hover:text-[#E23744] transition-colors"
                             >
                                 <Phone className="w-6 h-6 mb-1" />
                                 <span>Contact</span>
                             </a>
                             <a
-                                href="https://wa.me/1234567890"
+                                href="https://wa.me/7779064659"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex flex-col items-center text-xs text-gray-600 hover:text-green-600 transition-colors"
@@ -157,7 +157,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                             <span>+91 7779064659</span>
                         </a>
                         <a
-                            href="https://wa.me/1234567890"
+                            href="https://wa.me/7779064659"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm hover:text-green-600 transition-colors"
