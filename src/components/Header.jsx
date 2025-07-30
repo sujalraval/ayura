@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Phone, MessageCircle } from 'lucide-react';
 
-// SVG Components
 const CartIcon = () => (
     <img src="/4.png" alt="Cart" className="h-10 w-10" />
 );
@@ -10,14 +9,12 @@ const ProfileIcon = () => (
     <img src="/1.png" alt="Profile" className="h-10 w-10" />
 );
 
-const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }, filteredTests = [] }) => {
-    // State management
+const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }, filteredTests = [], onTestSelect }) => {
     const [scrolled, setScrolled] = useState(false);
     const [cartItems, setCartItems] = useState(0);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const searchRef = useRef(null);
 
-    // Scroll handler
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 100);
@@ -26,13 +23,11 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Cart items handler
     useEffect(() => {
         const items = JSON.parse(localStorage.getItem('cartItems')) || [];
         setCartItems(items.length);
     }, []);
 
-    // Click outside handler
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -43,10 +38,17 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Suggestion click handler
     const handleSuggestionClick = (test) => {
-        setSearchTerm(test);
+        setSearchTerm(test.name);
         setShowSuggestions(false);
+        if (onTestSelect) {
+            onTestSelect(test);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        setSearchTerm(e.target.value);
+        setShowSuggestions(e.target.value.length > 0);
     };
 
     return (
@@ -55,21 +57,15 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
             className={`fixed top-0 left-0 w-full z-50 bg-white shadow-md transition-all duration-300 ${scrolled ? 'bg-opacity-95' : ''}`}
         >
             <div className="container mx-auto px-4">
-                {/* Main Header Content */}
                 <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-y-4 py-3 md:py-1">
-                    {/* Logo */}
                     <div className="order-1 flex-shrink-0">
-                        <a
-                            href="/"
-                            className="text-2xl md:text-3xl font-black"
-                        >
+                        <a href="/" className="text-2xl md:text-3xl font-black">
                             <h1>
                                 <span className="text-[#E23744]">A</span>yura's
                             </h1>
                         </a>
                     </div>
 
-                    {/* Navigation Icons (Cart + Profile) */}
                     <div className="order-3 flex items-center gap-4 flex-shrink-0">
                         <div className="relative">
                             <a
@@ -92,7 +88,6 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                         </a>
                     </div>
 
-                    {/* Search Bar */}
                     {showSearch && (
                         <div className="order-4 md:order-2 w-full md:flex-1 md:max-w-2xl md:mx-4 relative" ref={searchRef}>
                             <div className="flex items-center bg-white rounded-full shadow-lg px-4 py-2">
@@ -102,8 +97,8 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                                     placeholder="Search tests..."
                                     className="flex-1 border-none outline-none bg-transparent text-sm md:text-base"
                                     value={searchTerm || ''}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onFocus={() => setShowSuggestions(true)}
+                                    onChange={handleInputChange}
+                                    onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
                                 />
                             </div>
 
@@ -111,19 +106,32 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                                 <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50 max-h-60 overflow-y-auto">
                                     {filteredTests.map((test, index) => (
                                         <div
-                                            key={index}
-                                            className="px-4 py-2 cursor-pointer hover:bg-red-50 text-sm md:text-base"
+                                            key={test._id || index}
+                                            className="px-4 py-2 cursor-pointer hover:bg-red-50 text-sm md:text-base border-b border-gray-100 last:border-b-0"
                                             onClick={() => handleSuggestionClick(test)}
                                         >
-                                            {test}
+                                            <div className="font-medium text-gray-800">{test.name}</div>
+                                            {test.category && (
+                                                <div className="text-xs text-gray-500">{test.category}</div>
+                                            )}
+                                            {test.price && (
+                                                <div className="text-xs text-red-500 font-semibold">₹{test.price}</div>
+                                            )}
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {showSuggestions && searchTerm.length > 0 && filteredTests.length === 0 && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50">
+                                    <div className="px-4 py-2 text-gray-500 text-center text-sm">
+                                        No tests found
+                                    </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* Mobile Contact Icons */}
                     <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 shadow-lg">
                         <div className="flex justify-around items-center py-3">
                             <a
@@ -146,7 +154,6 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                     </div>
                 </div>
 
-                {/* Desktop Contact Information Bar */}
                 <div className="hidden md:block border-t border-gray-200">
                     <div className="flex items-center justify-end py-2 px-4 gap-4">
                         <a
