@@ -18,12 +18,55 @@ export default function Home() {
     const [showHeaderSearch, setShowHeaderSearch] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredTests, setFilteredTests] = useState([]);
+    const [allTests, setAllTests] = useState([]);
     const [cartLoading, setCartLoading] = useState(false);
     const [cartItems, setCartItems] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
     const heroRef = useRef(null);
 
     const { user: authUser, token } = useAuth();
     const API_BASE_URL = 'https://ayuras.life/api/v1';
+
+    // Load all tests on component mount for fallback search
+    useEffect(() => {
+        const loadAllTests = async () => {
+            try {
+                // Try different possible endpoints
+                const endpoints = [
+                    `${API_BASE_URL}/lab-tests`,
+                    `${API_BASE_URL}/tests`,
+                    `${API_BASE_URL}/labtests`,
+                    `${API_BASE_URL}/lab-test`
+                ];
+
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await axios.get(endpoint);
+                        if (response.data && Array.isArray(response.data)) {
+                            setAllTests(response.data);
+                            console.log('Loaded tests from:', endpoint);
+                            break;
+                        } else if (response.data.data && Array.isArray(response.data.data)) {
+                            setAllTests(response.data.data);
+                            console.log('Loaded tests from:', endpoint);
+                            break;
+                        } else if (response.data.tests && Array.isArray(response.data.tests)) {
+                            setAllTests(response.data.tests);
+                            console.log('Loaded tests from:', endpoint);
+                            break;
+                        }
+                    } catch (err) {
+                        console.log(`Failed to load from ${endpoint}:`, err.response?.status);
+                        continue;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading all tests:', error);
+            }
+        };
+
+        loadAllTests();
+    }, []);
 
     // Load cart items on mount
     useEffect(() => {
@@ -31,19 +74,31 @@ export default function Home() {
             try {
                 const userId = authUser?.email || localStorage.getItem('userEmail');
                 if (!userId) {
-                    // Load from localStorage if no user
                     const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
                     setCartItems(items);
                     return;
                 }
 
-                const response = await axios.get(`${API_BASE_URL}/cart/${userId}`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
-                });
-                setCartItems(response.data.items || []);
+                // Try different cart endpoints
+                const cartEndpoints = [
+                    `${API_BASE_URL}/cart/${userId}`,
+                    `${API_BASE_URL}/user/cart/${userId}`,
+                    `${API_BASE_URL}/carts/${userId}`
+                ];
+
+                for (const endpoint of cartEndpoints) {
+                    try {
+                        const response = await axios.get(endpoint, {
+                            headers: token ? { Authorization: `Bearer ${token}` } : {}
+                        });
+                        setCartItems(response.data.items || response.data.cart?.items || response.data || []);
+                        break;
+                    } catch (err) {
+                        continue;
+                    }
+                }
             } catch (error) {
                 console.error('Error loading cart:', error);
-                // Fallback to localStorage
                 const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
                 setCartItems(items);
             }
@@ -51,14 +106,13 @@ export default function Home() {
 
         loadCartItems();
 
-        // Listen for cart updates
         const handleCartUpdate = () => loadCartItems();
         window.addEventListener('cartUpdated', handleCartUpdate);
 
         return () => window.removeEventListener('cartUpdated', handleCartUpdate);
     }, [authUser, token]);
 
-    // Enhanced search functionality with API call
+    // Enhanced search functionality with multiple fallback approaches
     useEffect(() => {
         const searchTests = async () => {
             if (!searchTerm || searchTerm.trim().length < 2) {
@@ -66,18 +120,90 @@ export default function Home() {
                 return;
             }
 
+            setSearchLoading(true);
+
             try {
-                const response = await axios.get(`${API_BASE_URL}/lab-tests/search?query=${encodeURIComponent(searchTerm.trim())}`);
-                setFilteredTests(response.data || []);
+                // Method 1: Try dedicated search endpoints
+                const searchEndpoints = [
+                    `${API_BASE_URL}/lab-tests/search?query=${encodeURIComponent(searchTerm.trim())}`,
+                    `${API_BASE_URL}/tests/search?query=${encodeURIComponent(searchTerm.trim())}`,
+                    `${API_BASE_URL}/lab-tests/search?q=${encodeURIComponent(searchTerm.trim())}`,
+                    `${API_BASE_URL}/search/lab-tests?query=${encodeURIComponent(searchTerm.trim())}`,
+                    `${API_BASE_URL}/search?type=lab-tests&query=${encodeURIComponent(searchTerm.trim())}`
+                ];
+
+                let searchResults = [];
+                let searchSuccess = false;
+
+                for (const endpoint of searchEndpoints) {
+                    try {
+                        const response = await axios.get(endpoint);
+                        if (response.data) {
+                            if (Array.isArray(response.data)) {
+                                searchResults = response.data;
+                            } else if (response.data.data && Array.isArray(response.data.data)) {
+                                searchResults = response.data.data;
+                            } else if (response.data.tests && Array.isArray(response.data.tests)) {
+                                searchResults = response.data.tests;
+                            } else if (response.data.results && Array.isArray(response.data.results)) {
+                                searchResults = response.data.results;
+                            }
+
+                            if (searchResults.length >= 0) {
+                                searchSuccess = true;
+                                break;
+                            }
+                        }
+                    } catch (err) {
+                        console.log(`Search failed for ${endpoint}:`, err.response?.status);
+                        continue;
+                    }
+                }
+
+                // Method 2: If API search fails, use local filtering
+                if (!searchSuccess && allTests.length > 0) {
+                    console.log('Using local search fallback');
+                    searchResults = allTests.filter(test => {
+                        const searchLower = searchTerm.toLowerCase();
+                        return (
+                            test.name?.toLowerCase().includes(searchLower) ||
+                            test.title?.toLowerCase().includes(searchLower) ||
+                            test.category?.toLowerCase().includes(searchLower) ||
+                            test.alias?.toLowerCase().includes(searchLower) ||
+                            test.description?.toLowerCase().includes(searchLower)
+                        );
+                    });
+                }
+
+                setFilteredTests(searchResults);
+
             } catch (error) {
                 console.error('Search error:', error);
-                setFilteredTests([]);
+
+                // Final fallback: client-side search
+                if (allTests.length > 0) {
+                    const filtered = allTests.filter(test => {
+                        const searchLower = searchTerm.toLowerCase();
+                        return (
+                            test.name?.toLowerCase().includes(searchLower) ||
+                            test.title?.toLowerCase().includes(searchLower) ||
+                            test.category?.toLowerCase().includes(searchLower) ||
+                            test.alias?.toLowerCase().includes(searchLower) ||
+                            test.description?.toLowerCase().includes(searchLower)
+                        );
+                    });
+                    setFilteredTests(filtered);
+                } else {
+                    setFilteredTests([]);
+                }
+            } finally {
+                setSearchLoading(false);
             }
         };
 
         const debounceTimer = setTimeout(searchTests, 300);
         return () => clearTimeout(debounceTimer);
-    }, [searchTerm]);
+    }, [searchTerm, allTests]);
 
     // Intersection Observer for hero section
     useEffect(() => {
@@ -108,14 +234,13 @@ export default function Home() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Handle test selection - navigate to test details
+    // Handle test selection
     const handleTestSelect = (test) => {
         console.log('Selected test:', test);
-        // Navigate to test details page
-        window.location.href = `/test-details/${test._id}`;
+        window.location.href = `/test-details/${test._id || test.id}`;
     };
 
-    // Handle add to cart
+    // Handle add to cart with multiple endpoint attempts
     const handleAddToCart = async (test) => {
         setCartLoading(true);
 
@@ -123,15 +248,17 @@ export default function Home() {
             const userId = authUser?.email || localStorage.getItem('userEmail');
 
             if (!userId) {
-                // If no user, store in localStorage
+                // Local storage fallback
                 const existingItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-                const isAlreadyInCart = existingItems.some(item => item._id === test._id || item.testId === test._id);
+                const isAlreadyInCart = existingItems.some(item =>
+                    item._id === test._id || item.testId === test._id || item.id === test._id
+                );
 
                 if (!isAlreadyInCart) {
                     const cartItem = {
-                        _id: test._id,
-                        testId: test._id,
-                        name: test.name,
+                        _id: test._id || test.id,
+                        testId: test._id || test.id,
+                        name: test.name || test.title,
                         price: test.price,
                         category: test.category,
                         description: test.description
@@ -140,44 +267,64 @@ export default function Home() {
                     localStorage.setItem('cartItems', JSON.stringify(updatedItems));
                     setCartItems(updatedItems);
 
-                    toast.success(`${test.name} added to cart!`);
+                    toast.success(`${test.name || test.title} added to cart!`);
                     window.dispatchEvent(new Event('cartUpdated'));
                 } else {
-                    toast.info(`${test.name} is already in your cart!`);
+                    toast.info(`${test.name || test.title} is already in your cart!`);
                 }
                 return;
             }
 
-            // If user is logged in, use API
+            // Try different cart add endpoints
             const cartItem = {
-                testId: test._id,
-                testName: test.name,
+                testId: test._id || test.id,
+                testName: test.name || test.title,
                 price: test.price,
                 category: test.category,
                 description: test.description
             };
 
-            const response = await axios.post(`${API_BASE_URL}/cart/add`, {
-                userId,
-                ...cartItem
-            }, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            });
+            const addEndpoints = [
+                `${API_BASE_URL}/cart/add`,
+                `${API_BASE_URL}/user/cart/add`,
+                `${API_BASE_URL}/carts/add`
+            ];
 
-            if (response.data.success) {
-                toast.success(`${test.name} added to cart!`);
-                setCartItems(response.data.cart.items || []);
-                window.dispatchEvent(new Event('cartUpdated'));
-            } else {
-                toast.info(response.data.message || `${test.name} is already in your cart!`);
+            let addSuccess = false;
+
+            for (const endpoint of addEndpoints) {
+                try {
+                    const response = await axios.post(endpoint, {
+                        userId,
+                        ...cartItem
+                    }, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    });
+
+                    if (response.data.success || response.status === 200 || response.status === 201) {
+                        toast.success(`${test.name || test.title} added to cart!`);
+                        setCartItems(response.data.cart?.items || response.data.items || []);
+                        window.dispatchEvent(new Event('cartUpdated'));
+                        addSuccess = true;
+                        break;
+                    }
+                } catch (err) {
+                    if (err.response?.status === 400 && err.response?.data?.message) {
+                        toast.info(err.response.data.message);
+                        addSuccess = true;
+                        break;
+                    }
+                    continue;
+                }
             }
+
+            if (!addSuccess) {
+                throw new Error('All cart endpoints failed');
+            }
+
         } catch (error) {
             console.error('Error adding to cart:', error);
-            if (error.response?.status === 400 && error.response?.data?.message) {
-                toast.info(error.response.data.message);
-            } else {
-                toast.error('Failed to add item to cart. Please try again.');
-            }
+            toast.error('Failed to add item to cart. Please try again.');
         } finally {
             setCartLoading(false);
         }
@@ -198,7 +345,6 @@ export default function Home() {
             const userId = authUser?.email || localStorage.getItem('userEmail');
 
             if (!userId) {
-                // Remove from localStorage
                 const existingItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
                 const updatedItems = existingItems.filter(item =>
                     item._id !== testId && item.testId !== testId && item.id !== testId
@@ -209,12 +355,24 @@ export default function Home() {
                 return;
             }
 
-            // Remove via API
-            await axios.delete(`${API_BASE_URL}/cart/remove/${userId}/${testId}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            });
+            // Try different remove endpoints
+            const removeEndpoints = [
+                `${API_BASE_URL}/cart/remove/${userId}/${testId}`,
+                `${API_BASE_URL}/user/cart/remove/${userId}/${testId}`,
+                `${API_BASE_URL}/carts/remove/${userId}/${testId}`
+            ];
 
-            // Update local state
+            for (const endpoint of removeEndpoints) {
+                try {
+                    await axios.delete(endpoint, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    });
+                    break;
+                } catch (err) {
+                    continue;
+                }
+            }
+
             setCartItems(prevItems => prevItems.filter(item =>
                 item.testId !== testId && item._id !== testId && item.id !== testId
             ));
@@ -237,6 +395,7 @@ export default function Home() {
                 onAddToCart={handleAddToCart}
                 isInCart={isTestInCart}
                 cartLoading={cartLoading}
+                searchLoading={searchLoading}
             />
 
             <main>
@@ -250,6 +409,7 @@ export default function Home() {
                         onRemoveFromCart={handleRemoveFromCart}
                         isInCart={isTestInCart}
                         cartLoading={cartLoading}
+                        searchLoading={searchLoading}
                     />
                 </div>
                 <Categories />
