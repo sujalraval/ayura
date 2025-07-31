@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Phone, MessageCircle } from 'lucide-react';
+import { Search, Phone, MessageCircle, Loader2 } from 'lucide-react';
 
 const CartIcon = () => (
     <img src="/4.png" alt="Cart" className="h-10 w-10" />
@@ -9,10 +9,21 @@ const ProfileIcon = () => (
     <img src="/1.png" alt="Profile" className="h-10 w-10" />
 );
 
-const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }, filteredTests = [], onTestSelect }) => {
+const Header = ({
+    showSearch = false,
+    searchTerm = '',
+    setSearchTerm = () => { },
+    filteredTests = [],
+    onTestSelect,
+    onAddToCart,
+    isInCart,
+    cartLoading,
+    searchLoading
+}) => {
     const [scrolled, setScrolled] = useState(false);
     const [cartItems, setCartItems] = useState(0);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loadingTestId, setLoadingTestId] = useState(null);
     const searchRef = useRef(null);
 
     useEffect(() => {
@@ -24,8 +35,18 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
     }, []);
 
     useEffect(() => {
-        const items = JSON.parse(localStorage.getItem('cartItems')) || [];
-        setCartItems(items.length);
+        const updateCartCount = () => {
+            const items = JSON.parse(localStorage.getItem('cartItems')) || [];
+            setCartItems(items.length);
+        };
+
+        updateCartCount();
+
+        // Listen for cart updates
+        const handleCartUpdate = () => updateCartCount();
+        window.addEventListener('cartUpdated', handleCartUpdate);
+
+        return () => window.removeEventListener('cartUpdated', handleCartUpdate);
     }, []);
 
     useEffect(() => {
@@ -39,7 +60,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
     }, []);
 
     const handleSuggestionClick = (test) => {
-        setSearchTerm(test.name);
+        setSearchTerm(test.name || test.title || '');
         setShowSuggestions(false);
         if (onTestSelect) {
             onTestSelect(test);
@@ -51,10 +72,34 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
         setShowSuggestions(e.target.value.length > 0);
     };
 
+    const handleAddToCart = async (test, e) => {
+        e.stopPropagation();
+        const testId = test._id || test.id;
+        if (cartLoading || loadingTestId === testId) return;
+
+        setLoadingTestId(testId);
+
+        try {
+            if (onAddToCart) {
+                await onAddToCart(test);
+            }
+        } catch (error) {
+            console.error('Cart action error:', error);
+        } finally {
+            setLoadingTestId(null);
+        }
+    };
+
+    const getDiscountPercentage = (originalPrice, currentPrice) => {
+        if (!originalPrice || originalPrice <= currentPrice) return 0;
+        return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
+    };
+
     return (
         <header
             id="header"
-            className={`fixed top-0 left-0 w-full z-50 bg-white shadow-md transition-all duration-300 ${scrolled ? 'bg-opacity-95' : ''}`}
+            className={`fixed top-0 left-0 w-full z-50 bg-white shadow-md transition-all duration-300 ${scrolled ? 'bg-opacity-95' : ''
+                }`}
         >
             <div className="container mx-auto px-4">
                 <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-y-4 py-3 md:py-1">
@@ -100,32 +145,90 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                                     onChange={handleInputChange}
                                     onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
                                 />
+                                {searchLoading && (
+                                    <Loader2 className="w-4 h-4 animate-spin text-red-500 ml-2" />
+                                )}
                             </div>
 
-                            {showSuggestions && filteredTests.length > 0 && (
-                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50 max-h-60 overflow-y-auto">
-                                    {filteredTests.map((test, index) => (
-                                        <div
-                                            key={test._id || index}
-                                            className="px-4 py-2 cursor-pointer hover:bg-red-50 text-sm md:text-base border-b border-gray-100 last:border-b-0"
-                                            onClick={() => handleSuggestionClick(test)}
-                                        >
-                                            <div className="font-medium text-gray-800">{test.name}</div>
-                                            {test.category && (
-                                                <div className="text-xs text-gray-500">{test.category}</div>
-                                            )}
-                                            {test.price && (
-                                                <div className="text-xs text-red-500 font-semibold">₹{test.price}</div>
-                                            )}
-                                        </div>
-                                    ))}
+                            {showSuggestions && searchLoading && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50">
+                                    <div className="px-4 py-3 text-center">
+                                        <Loader2 className="w-5 h-5 animate-spin text-red-500 mx-auto mb-1" />
+                                        <div className="text-xs text-gray-500">Searching...</div>
+                                    </div>
                                 </div>
                             )}
 
-                            {showSuggestions && searchTerm.length > 0 && filteredTests.length === 0 && (
+                            {showSuggestions && !searchLoading && filteredTests.length > 0 && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50 max-h-80 overflow-y-auto">
+                                    {filteredTests.map((test, index) => {
+                                        const testId = test._id || test.id;
+                                        const testName = test.name || test.title;
+                                        const isLoading = loadingTestId === testId;
+                                        const inCart = isInCart && isInCart(testId);
+
+                                        return (
+                                            <div
+                                                key={testId || index}
+                                                className="px-4 py-3 cursor-pointer hover:bg-red-50 text-sm md:text-base border-b border-gray-100 last:border-b-0"
+                                            >
+                                                <div className="flex justify-between items-start gap-3">
+                                                    <div
+                                                        className="flex-1 min-w-0"
+                                                        onClick={() => handleSuggestionClick(test)}
+                                                    >
+                                                        <div className="font-medium text-gray-800 hover:text-red-600 transition-colors">
+                                                            {testName}
+                                                        </div>
+                                                        {test.category && (
+                                                            <div className="text-xs text-gray-500 mt-1">{test.category}</div>
+                                                        )}
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {test.price && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-sm font-semibold text-red-500">₹{test.price}</span>
+                                                                    {test.originalPrice && test.originalPrice > test.price && (
+                                                                        <>
+                                                                            <span className="text-xs text-gray-400 line-through">₹{test.originalPrice}</span>
+                                                                            <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded">
+                                                                                {getDiscountPercentage(test.originalPrice, test.price)}% OFF
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {onAddToCart && (
+                                                        <button
+                                                            onClick={(e) => handleAddToCart(test, e)}
+                                                            disabled={isLoading}
+                                                            className={`px-2 py-1 rounded text-xs transition-all whitespace-nowrap ${inCart
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : 'bg-red-500 text-white hover:bg-red-600'
+                                                                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {isLoading ? (
+                                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                            ) : inCart ? (
+                                                                'Added'
+                                                            ) : (
+                                                                'Add'
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {showSuggestions && !searchLoading && searchTerm.length > 0 && filteredTests.length === 0 && (
                                 <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-1 z-50">
-                                    <div className="px-4 py-2 text-gray-500 text-center text-sm">
-                                        No tests found
+                                    <div className="px-4 py-3 text-gray-500 text-center text-sm">
+                                        No tests found for "{searchTerm}"
                                     </div>
                                 </div>
                             )}
@@ -135,7 +238,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                     <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 shadow-lg">
                         <div className="flex justify-around items-center py-3">
                             <a
-                                href="tel:+91 7779064659"
+                                href="tel:+917779064659"
                                 className="flex flex-col items-center text-xs text-gray-600 hover:text-[#E23744] transition-colors"
                             >
                                 <Phone className="w-6 h-6 mb-1" />
@@ -157,7 +260,7 @@ const Header = ({ showSearch = false, searchTerm = '', setSearchTerm = () => { }
                 <div className="hidden md:block border-t border-gray-200">
                     <div className="flex items-center justify-end py-2 px-4 gap-4">
                         <a
-                            href="tel:+7779064659"
+                            href="tel:+917779064659"
                             className="flex items-center gap-2 text-sm hover:text-[#E23744] transition-colors"
                         >
                             <Phone className="w-4 h-4 text-[#E23744]" />

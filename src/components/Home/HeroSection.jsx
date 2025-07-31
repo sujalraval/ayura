@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Search, ShoppingCart, Eye, Plus, Check } from "lucide-react"
+import { Search, ShoppingCart, Eye, Plus, Check, Loader2 } from "lucide-react"
 
 export default function HeroSection({
     searchTerm,
@@ -11,7 +11,8 @@ export default function HeroSection({
     onAddToCart,
     onRemoveFromCart,
     isInCart,
-    cartLoading
+    cartLoading,
+    searchLoading
 }) {
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [loadingTestId, setLoadingTestId] = useState(null)
@@ -29,6 +30,8 @@ export default function HeroSection({
     }, [])
 
     const handleSuggestionClick = (test) => {
+        setSearchTerm(test.name || test.title || '')
+        setShowSuggestions(false)
         if (onTestSelect) {
             onTestSelect(test)
         }
@@ -41,14 +44,15 @@ export default function HeroSection({
 
     const handleAddToCart = async (test, e) => {
         e.stopPropagation()
-        if (cartLoading || loadingTestId === test._id) return
+        const testId = test._id || test.id
+        if (cartLoading || loadingTestId === testId) return
 
-        setLoadingTestId(test._id)
+        setLoadingTestId(testId)
 
         try {
-            if (isInCart && isInCart(test._id)) {
+            if (isInCart && isInCart(testId)) {
                 if (onRemoveFromCart) {
-                    await onRemoveFromCart(test._id)
+                    await onRemoveFromCart(testId)
                 }
             } else {
                 if (onAddToCart) {
@@ -88,6 +92,12 @@ export default function HeroSection({
                 .animate-slide-messages {
                     animation: slideMessages 25s infinite linear;
                 }
+                .line-clamp-2 {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
             `}</style>
 
             <div className="container mx-auto px-4 max-w-6xl relative z-10">
@@ -123,106 +133,125 @@ export default function HeroSection({
                                 onChange={handleInputChange}
                                 onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
                             />
+                            {searchLoading && (
+                                <Loader2 className="w-4 h-4 animate-spin text-red-500 ml-2" />
+                            )}
                         </div>
 
-                        {showSuggestions && filteredTests.length > 0 && (
-                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-xl mt-1 z-50 max-h-80 overflow-y-auto border border-gray-200">
-                                {filteredTests.map((test, index) => (
-                                    <div
-                                        key={test._id || index}
-                                        className="px-4 py-4 cursor-pointer hover:bg-red-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
-                                    >
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <div
-                                                    className="font-semibold text-gray-800 text-left mb-1 hover:text-red-600 transition-colors cursor-pointer"
-                                                    onClick={() => handleSuggestionClick(test)}
-                                                >
-                                                    {test.name}
-                                                </div>
-
-                                                {test.alias && (
-                                                    <div className="text-xs text-gray-500 mb-1 text-left">
-                                                        Also known as: {test.alias}
-                                                    </div>
-                                                )}
-
-                                                {test.category && (
-                                                    <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block mb-2">
-                                                        {test.category}
-                                                    </div>
-                                                )}
-
-                                                {test.description && (
-                                                    <div className="text-xs text-gray-600 text-left mb-2 line-clamp-2">
-                                                        {test.description.length > 100
-                                                            ? `${test.description.substring(0, 100)}...`
-                                                            : test.description
-                                                        }
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-center gap-2 text-left">
-                                                    {test.price && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-lg font-bold text-red-600">
-                                                                ₹{test.price}
-                                                            </span>
-                                                            {test.originalPrice && test.originalPrice > test.price && (
-                                                                <>
-                                                                    <span className="text-sm text-gray-500 line-through">
-                                                                        ₹{test.originalPrice}
-                                                                    </span>
-                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                                                        {getDiscountPercentage(test.originalPrice, test.price)}% OFF
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {test.duration && (
-                                                        <span className="text-xs text-gray-500">
-                                                            • Report in {test.duration}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col gap-2 ml-4">
-                                                <button
-                                                    onClick={(e) => handleViewDetails(test, e)}
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors whitespace-nowrap"
-                                                >
-                                                    <Eye className="w-3 h-3" />
-                                                    View Details
-                                                </button>
-
-                                                <button
-                                                    onClick={(e) => handleAddToCart(test, e)}
-                                                    disabled={loadingTestId === test._id}
-                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${isInCart && isInCart(test._id)
-                                                            ? 'bg-green-500 text-white hover:bg-green-600'
-                                                            : 'bg-red-500 text-white hover:bg-red-600'
-                                                        } ${loadingTestId === test._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                >
-                                                    {loadingTestId === test._id ? (
-                                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                                                    ) : isInCart && isInCart(test._id) ? (
-                                                        <Check className="w-3 h-3" />
-                                                    ) : (
-                                                        <Plus className="w-3 h-3" />
-                                                    )}
-                                                    {isInCart && isInCart(test._id) ? 'Added' : 'Add to Cart'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                        {showSuggestions && searchLoading && (
+                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-xl mt-1 z-50 border border-gray-200">
+                                <div className="px-5 py-4 text-center">
+                                    <Loader2 className="w-6 h-6 animate-spin text-red-500 mx-auto mb-2" />
+                                    <div className="text-sm text-gray-500">Searching...</div>
+                                </div>
                             </div>
                         )}
 
-                        {showSuggestions && searchTerm.length > 0 && filteredTests.length === 0 && (
+                        {showSuggestions && !searchLoading && filteredTests.length > 0 && (
+                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-xl mt-1 z-50 max-h-80 overflow-y-auto border border-gray-200">
+                                {filteredTests.map((test, index) => {
+                                    const testId = test._id || test.id
+                                    const testName = test.name || test.title
+                                    const isLoading = loadingTestId === testId
+                                    const inCart = isInCart && isInCart(testId)
+
+                                    return (
+                                        <div
+                                            key={testId || index}
+                                            className="px-4 py-4 cursor-pointer hover:bg-red-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
+                                        >
+                                            <div className="flex justify-between items-start gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div
+                                                        className="font-semibold text-gray-800 text-left mb-1 hover:text-red-600 transition-colors cursor-pointer"
+                                                        onClick={() => handleSuggestionClick(test)}
+                                                    >
+                                                        {testName}
+                                                    </div>
+
+                                                    {test.alias && (
+                                                        <div className="text-xs text-gray-500 mb-1 text-left">
+                                                            Also known as: {test.alias}
+                                                        </div>
+                                                    )}
+
+                                                    {test.category && (
+                                                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block mb-2">
+                                                            {test.category}
+                                                        </div>
+                                                    )}
+
+                                                    {test.description && (
+                                                        <div className="text-xs text-gray-600 text-left mb-2 line-clamp-2">
+                                                            {test.description.length > 100
+                                                                ? `${test.description.substring(0, 100)}...`
+                                                                : test.description
+                                                            }
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex items-center gap-2 text-left">
+                                                        {test.price && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-lg font-bold text-red-600">
+                                                                    ₹{test.price}
+                                                                </span>
+                                                                {test.originalPrice && test.originalPrice > test.price && (
+                                                                    <>
+                                                                        <span className="text-sm text-gray-500 line-through">
+                                                                            ₹{test.originalPrice}
+                                                                        </span>
+                                                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                                                            {getDiscountPercentage(test.originalPrice, test.price)}% OFF
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {test.duration && (
+                                                            <span className="text-xs text-gray-500">
+                                                                • Report in {test.duration}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 ml-4">
+                                                    <button
+                                                        onClick={(e) => handleViewDetails(test, e)}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors whitespace-nowrap"
+                                                    >
+                                                        <Eye className="w-3 h-3" />
+                                                        View Details
+                                                    </button>
+
+                                                    <button
+                                                        onClick={(e) => handleAddToCart(test, e)}
+                                                        disabled={isLoading}
+                                                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${inCart
+                                                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                                                : 'bg-red-500 text-white hover:bg-red-600'
+                                                            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    >
+                                                        {isLoading ? (
+                                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                                        ) : inCart ? (
+                                                            <Check className="w-3 h-3" />
+                                                        ) : (
+                                                            <Plus className="w-3 h-3" />
+                                                        )}
+                                                        {inCart ? 'Added' : 'Add to Cart'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+
+                        {showSuggestions && !searchLoading && searchTerm.length > 0 && filteredTests.length === 0 && (
                             <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-lg mt-1 z-50 border border-gray-200">
                                 <div className="px-5 py-4 text-gray-500 text-center">
                                     <div className="text-sm">No tests found for "{searchTerm}"</div>

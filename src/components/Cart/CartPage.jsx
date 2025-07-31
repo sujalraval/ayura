@@ -228,7 +228,7 @@ const CartPage = () => {
                     <p className="text-gray-500 mb-6">It looks like you haven't added any lab tests yet.</p>
                     <button
                         onClick={() => navigate('/')}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="bg-[#E23744] text-white px-6 py-3 rounded-lg transition-colors"
                     >
                         Browse Lab Tests
                     </button>
