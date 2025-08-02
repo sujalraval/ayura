@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Search, ShoppingCart, Eye, Plus, Check, Loader2 } from "lucide-react"
+import { Search, Eye, Plus, Check, Loader2 } from "lucide-react"
 
 export default function HeroSection({
     searchTerm,
@@ -79,7 +79,7 @@ export default function HeroSection({
     }
 
     return (
-        <section id="home" className="relative pt-36 pb-32 md:pb-48 bg-white">
+        <section id="home" className="relative pt-20 pb-20 md:pt-32 md:pb-32 bg-gradient-to-br from-red-50 to-white overflow-hidden">
             <style>{`
                 @keyframes slideMessages {
                     0%, 19% { transform: translateY(0); }
@@ -100,99 +100,71 @@ export default function HeroSection({
                 }
             `}</style>
 
-            <div className="container mx-auto px-4 max-w-6xl relative z-10">
-                <div className="text-center max-w-3xl mx-auto">
-                    <div className="h-16 overflow-hidden mb-8">
-                        <div className="animate-slide-messages">
-                            <div className="h-16 flex items-center justify-center text-2xl font-bold text-red-500">
-                                Looking for the right test? Start here!
-                            </div>
-                            <div className="h-16 flex items-center justify-center text-2xl font-bold text-red-500">
-                                Your health matters. Because you matter!
-                            </div>
-                            <div className="h-16 flex items-center justify-center text-2xl font-bold text-red-500">
-                                We care for you, every step of the way!
-                            </div>
-                            <div className="h-16 flex items-center justify-center text-2xl font-bold text-red-500">
-                                Your well-being comes first - Always!
-                            </div>
-                            <div className="h-16 flex items-center justify-center text-2xl font-bold text-red-500">
-                                Health - Care - Trust. We're always with you.
-                            </div>
-                        </div>
-                    </div>
+            <div className="container mx-auto px-4 max-w-7xl relative z-10">
+                <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+                    {/* Left Content - 40% on large screens */}
+                    <div className="w-full lg:w-2/5 text-center lg:text-left order-2 lg:order-1">
+                        {/* Main Heading */}
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 lg:mb-6 leading-tight">
+                            Looking for a test?
+                        </h1>
 
-                    <div className="mb-10 relative" ref={searchRef}>
-                        <div className="flex items-center bg-white rounded-full shadow-lg px-5 py-3 max-w-xl mx-auto relative">
-                            <Search className="text-red-500 w-5 h-5 mr-3" />
-                            <input
-                                type="text"
-                                placeholder="Search for tests or health packages..."
-                                className="flex-1 border-none outline-none bg-transparent text-base"
-                                value={searchTerm}
-                                onChange={handleInputChange}
-                                onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
-                            />
-                            {searchLoading && (
-                                <Loader2 className="w-4 h-4 animate-spin text-red-500 ml-2" />
-                            )}
-                        </div>
+                        <p className="text-lg md:text-xl text-gray-600 mb-8 lg:mb-10">
+                            Find the right health test for you with our comprehensive search
+                        </p>
 
-                        {showSuggestions && searchLoading && (
-                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-xl mt-1 z-50 border border-gray-200">
-                                <div className="px-5 py-4 text-center">
-                                    <Loader2 className="w-6 h-6 animate-spin text-red-500 mx-auto mb-2" />
-                                    <div className="text-sm text-gray-500">Searching...</div>
+                        {/* Search Bar */}
+                        <div className="mb-8 relative" ref={searchRef}>
+                            <div className="flex items-center bg-white rounded-full shadow-lg px-5 py-4 w-full max-w-2xl mx-auto lg:mx-0 relative border border-gray-200">
+                                <Search className="text-red-500 w-5 h-5 mr-4 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    placeholder="Search Tests"
+                                    className="flex-1 border-none outline-none bg-transparent text-base placeholder-gray-500"
+                                    value={searchTerm}
+                                    onChange={handleInputChange}
+                                    onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
+                                />
+                                {searchLoading && (
+                                    <Loader2 className="w-5 h-5 animate-spin text-red-500 ml-2 flex-shrink-0" />
+                                )}
+                            </div>
+
+                            {/* Search Loading State */}
+                            {showSuggestions && searchLoading && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl mt-2 z-50 border border-gray-200">
+                                    <div className="px-5 py-4 text-center">
+                                        <Loader2 className="w-6 h-6 animate-spin text-red-500 mx-auto mb-2" />
+                                        <div className="text-sm text-gray-500">Searching...</div>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {showSuggestions && !searchLoading && filteredTests.length > 0 && (
-                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-xl mt-1 z-50 max-h-80 overflow-y-auto border border-gray-200">
-                                {filteredTests.map((test, index) => {
-                                    const testId = test._id || test.id
-                                    const testName = test.name || test.title
-                                    const isLoading = loadingTestId === testId
-                                    const inCart = isInCart && isInCart(testId)
+                            {/* Search Suggestions */}
+                            {showSuggestions && !searchLoading && filteredTests.length > 0 && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl mt-2 z-50 max-h-80 overflow-y-auto border border-gray-200">
+                                    {filteredTests.map((test, index) => {
+                                        const testId = test._id || test.id
+                                        const testName = test.name || test.title
+                                        const isLoading = loadingTestId === testId
+                                        const inCart = isInCart && isInCart(testId)
 
-                                    return (
-                                        <div
-                                            key={testId || index}
-                                            className="px-4 py-4 cursor-pointer hover:bg-red-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
-                                        >
-                                            <div className="flex justify-between items-start gap-4">
-                                                <div className="flex-1 min-w-0">
-                                                    <div
-                                                        className="font-semibold text-gray-800 text-left mb-1 hover:text-red-600 transition-colors cursor-pointer"
-                                                        onClick={() => handleSuggestionClick(test)}
-                                                    >
-                                                        {testName}
-                                                    </div>
-
-                                                    {test.alias && (
-                                                        <div className="text-xs text-gray-500 mb-1 text-left">
-                                                            Also known as: {test.alias}
+                                        return (
+                                            <div
+                                                key={testId || index}
+                                                className="px-4 py-4 cursor-pointer hover:bg-red-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
+                                            >
+                                                <div className="flex justify-between items-center gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div
+                                                            className="font-semibold text-gray-800 text-left mb-1 hover:text-red-600 transition-colors cursor-pointer"
+                                                            onClick={() => handleSuggestionClick(test)}
+                                                        >
+                                                            {testName}
                                                         </div>
-                                                    )}
 
-                                                    {test.category && (
-                                                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block mb-2">
-                                                            {test.category}
-                                                        </div>
-                                                    )}
-
-                                                    {test.description && (
-                                                        <div className="text-xs text-gray-600 text-left mb-2 line-clamp-2">
-                                                            {test.description.length > 100
-                                                                ? `${test.description.substring(0, 100)}...`
-                                                                : test.description
-                                                            }
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex items-center gap-2 text-left">
                                                         {test.price && (
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-2 text-left">
                                                                 <span className="text-lg font-bold text-red-600">
                                                                     ₹{test.price}
                                                                 </span>
@@ -208,61 +180,97 @@ export default function HeroSection({
                                                                 )}
                                                             </div>
                                                         )}
-
-                                                        {test.duration && (
-                                                            <span className="text-xs text-gray-500">
-                                                                • Report in {test.duration}
-                                                            </span>
-                                                        )}
                                                     </div>
-                                                </div>
 
-                                                <div className="flex flex-col gap-2 ml-4">
-                                                    <button
-                                                        onClick={(e) => handleViewDetails(test, e)}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors whitespace-nowrap"
-                                                    >
-                                                        <Eye className="w-3 h-3" />
-                                                        View Details
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={(e) => handleViewDetails(test, e)}
+                                                            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View
+                                                        </button>
 
-                                                    <button
-                                                        onClick={(e) => handleAddToCart(test, e)}
-                                                        disabled={isLoading}
-                                                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${inCart
+                                                        <button
+                                                            onClick={(e) => handleAddToCart(test, e)}
+                                                            disabled={isLoading}
+                                                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-all ${inCart
                                                                 ? 'bg-green-500 text-white hover:bg-green-600'
                                                                 : 'bg-red-500 text-white hover:bg-red-600'
-                                                            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    >
-                                                        {isLoading ? (
-                                                            <Loader2 className="w-3 h-3 animate-spin" />
-                                                        ) : inCart ? (
-                                                            <Check className="w-3 h-3" />
-                                                        ) : (
-                                                            <Plus className="w-3 h-3" />
-                                                        )}
-                                                        {inCart ? 'Added' : 'Add to Cart'}
-                                                    </button>
+                                                                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {isLoading ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : inCart ? (
+                                                                <Check className="w-4 h-4" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4" />
+                                                            )}
+                                                            {inCart ? 'Added' : 'Add'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
-
-                        {showSuggestions && !searchLoading && searchTerm.length > 0 && filteredTests.length === 0 && (
-                            <div className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-lg mt-1 z-50 border border-gray-200">
-                                <div className="px-5 py-4 text-gray-500 text-center">
-                                    <div className="text-sm">No tests found for "{searchTerm}"</div>
-                                    <div className="text-xs mt-1">Try searching with different keywords</div>
+                                        )
+                                    })}
                                 </div>
-                            </div>
-                        )}
+                            )}
+
+                            {/* No Results */}
+                            {showSuggestions && !searchLoading && searchTerm.length > 0 && filteredTests.length === 0 && (
+                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-2 z-50 border border-gray-200">
+                                    <div className="px-5 py-4 text-gray-500 text-center">
+                                        <div className="text-sm">No tests found for "{searchTerm}"</div>
+                                        <div className="text-xs mt-1">Try searching with different keywords</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <button className="px-8 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg">
+                                Select Health Package
+                            </button>
+                            <button className="px-8 py-3 bg-white text-red-600 border-2 border-red-600 rounded-lg font-semibold hover:bg-red-50 transition-colors">
+                                Create Your Own Package
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right Image - 60% on large screens with much smaller height */}
+                    <div className="w-full lg:w-3/5 order-1 lg:order-2">
+                        <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-[280px] xl:h-[320px]">
+                            <img
+                                src="/herosectionImage.jpg"
+                                alt="Healthcare Professional"
+                                className="w-full h-full object-cover rounded-3xl shadow-2xl"
+                                loading="eager"
+                            />
+                            {/* Subtle overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent rounded-3xl"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="mt-16  border-gray-200">
+                    <div className="flex flex-wrap justify-center lg:justify-start gap-8 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span>Trusted by 70+ Lakhs Patients</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span>Family-like Care</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <span>India's Most Loved Diagnostics Lab</span>
+                        </div>
                     </div>
                 </div>
             </div>
-
             <div className="absolute bottom-0 left-0 w-full leading-0 z-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
                     <path
