@@ -19,22 +19,13 @@ const TestDetails = () => {
     useEffect(() => {
         const fetchTestDetails = async () => {
             if (!id) {
-                console.log('No ID provided');
                 setLoading(false);
                 return;
             }
 
-            console.log('=== TestDetails Debug ===');
-            console.log('Test ID from params:', id);
-            console.log('ID length:', id.length);
-            console.log('API URL:', `${API_BASE_URL}/lab-tests/${id}`);
-
             try {
                 setLoading(true);
                 const response = await fetch(`${API_BASE_URL}/lab-tests/${id}`);
-
-                console.log('Response status:', response.status);
-                console.log('Response OK:', response.ok);
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -213,12 +204,10 @@ const TestDetails = () => {
                                     <div className="mb-6">
                                         <h3 className="font-semibold mb-3">Test Parameters</h3>
                                         <div className="space-y-2">
-                                            {test.parameters.map((param, index) => (
-                                                <div key={index} className="flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-green-500" />
-                                                    <span>{param}</span>
-                                                </div>
-                                            ))}
+                                            <div className="flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-500" />
+                                                <span>{test.parameters}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
