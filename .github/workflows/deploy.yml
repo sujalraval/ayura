@@ -20,5 +20,9 @@ jobs:
           key: ${{ secrets.SSHKEY }}
           script: |
             cd /root/ayuracode/ayura/
-            chmod +x ./.scripts/deploy.sh
-            ./.scripts/deploy.sh
+            git pull origin main
+            git clean -fd
+            # continue deployment...
+            npm install --yes
+            rm -rf /var/www/html/dist/*
+            npx vite build --outDir /var/www/html/dist

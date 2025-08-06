@@ -1,3 +1,4 @@
+// Header.jsx
 import { useState, useEffect, useRef } from 'react';
 import { Search, Phone, MessageCircle, Loader2 } from 'lucide-react';
 
@@ -41,8 +42,6 @@ const Header = ({
         };
 
         updateCartCount();
-
-        // Listen for cart updates
         const handleCartUpdate = () => updateCartCount();
         window.addEventListener('cartUpdated', handleCartUpdate);
 
@@ -72,21 +71,10 @@ const Header = ({
         setShowSuggestions(e.target.value.length > 0);
     };
 
-    const handleAddToCart = async (test, e) => {
+    const handleViewDetails = (test, e) => {
         e.stopPropagation();
-        const testId = test._id || test.id;
-        if (cartLoading || loadingTestId === testId) return;
-
-        setLoadingTestId(testId);
-
-        try {
-            if (onAddToCart) {
-                await onAddToCart(test);
-            }
-        } catch (error) {
-            console.error('Cart action error:', error);
-        } finally {
-            setLoadingTestId(null);
+        if (onTestSelect) {
+            onTestSelect(test);
         }
     };
 
@@ -164,20 +152,16 @@ const Header = ({
                                     {filteredTests.map((test, index) => {
                                         const testId = test._id || test.id;
                                         const testName = test.name || test.title;
-                                        const isLoading = loadingTestId === testId;
-                                        const inCart = isInCart && isInCart(testId);
 
                                         return (
                                             <div
                                                 key={testId || index}
                                                 className="px-4 py-3 cursor-pointer hover:bg-red-50 text-sm md:text-base border-b border-gray-100 last:border-b-0"
+                                                onClick={() => handleSuggestionClick(test)}
                                             >
                                                 <div className="flex justify-between items-start gap-3">
-                                                    <div
-                                                        className="flex-1 min-w-0"
-                                                        onClick={() => handleSuggestionClick(test)}
-                                                    >
-                                                        <div className="font-medium text-gray-800 hover:text-red-600 transition-colors">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium text-gray-800">
                                                             {testName}
                                                         </div>
                                                         {test.category && (
@@ -200,24 +184,12 @@ const Header = ({
                                                         </div>
                                                     </div>
 
-                                                    {onAddToCart && (
-                                                        <button
-                                                            onClick={(e) => handleAddToCart(test, e)}
-                                                            disabled={isLoading}
-                                                            className={`px-2 py-1 rounded text-xs transition-all whitespace-nowrap ${inCart
-                                                                ? 'bg-green-100 text-green-700'
-                                                                : 'bg-red-500 text-white hover:bg-red-600'
-                                                                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            {isLoading ? (
-                                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                                            ) : inCart ? (
-                                                                'Added'
-                                                            ) : (
-                                                                'Add'
-                                                            )}
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={(e) => handleViewDetails(test, e)}
+                                                        className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs transition-all whitespace-nowrap hover:bg-gray-200"
+                                                    >
+                                                        View
+                                                    </button>
                                                 </div>
                                             </div>
                                         );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header';
 import "@fortawesome/fontawesome-free/css/all.min.css";
@@ -21,7 +21,7 @@ const useMediaQuery = (query) => {
 };
 
 // Detail View Component
-const TestDetailView = ({ test, onClose, onAddToCart, onRemoveFromCart, isInCart, cartLoading }) => {
+const TestDetailView = ({ test, onClose, onAddToCart, onRemoveFromCart, isInCart, cartLoading, isMobile }) => {
     if (!test) return null;
 
     const getDiscountPercentage = (original, current) => {
@@ -38,124 +38,263 @@ const TestDetailView = ({ test, onClose, onAddToCart, onRemoveFromCart, isInCart
             } else {
                 await onAddToCart(test);
             }
-            onClose();
         } catch (error) {
             console.error('Cart action error:', error);
         }
     };
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-2xl font-bold text-[#2D2D2D] pr-4">{test.name}</h2>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 flex-shrink-0"
-                            aria-label="Close details"
-                        >
-                            <i className="fas fa-times text-xl"></i>
-                        </button>
+    // Mobile bottom drawer
+    if (isMobile) {
+        return (
+            <>
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0  bg-opacity-100 z-50"
+                    onClick={onClose}
+                />
+
+                {/* Bottom drawer */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl z-50 max-h-[80vh] overflow-hidden animate-slide-up">
+                    <div className="p-4 border-b">
+                        <div className="flex justify-between items-start">
+                            <h2 className="text-xl font-bold text-[#2D2D2D] pr-4">{test.name}</h2>
+                            <button
+                                onClick={onClose}
+                                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+                                aria-label="Close details"
+                            >
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        {/* Price and discount */}
+                        <div className="flex items-center mt-3">
+                            {test.originalPrice && test.originalPrice > test.price && (
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium mr-2">
+                                    {getDiscountPercentage(test.originalPrice, test.price)}% OFF
+                                </div>
+                            )}
+                            <div className="flex items-center space-x-2">
+                                <span className="text-xl font-bold text-[#E23744]">₹{test.price}</span>
+                                {test.originalPrice && test.originalPrice > test.price && (
+                                    <span className="text-gray-500 line-through text-sm">₹{test.originalPrice}</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex items-center mb-4">
-                        {test.originalPrice && test.originalPrice > test.price && (
-                            <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">
-                                {getDiscountPercentage(test.originalPrice, test.price)}% OFF
-                            </div>
-                        )}
-                        <div className="flex items-center space-x-2">
-                            <span className="text-2xl font-bold text-[#E23744]">₹{test.price}</span>
-                            {test.originalPrice && test.originalPrice > test.price && (
-                                <span className="text-gray-500 line-through">₹{test.originalPrice}</span>
+                    <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4">
+                        <p className="text-gray-700 mb-4">
+                            {test.detailedDescription || test.description || 'No description available.'}
+                        </p>
+
+                        {/* Test Information */}
+                        <div className="grid grid-cols-1 gap-3 mb-4">
+                            {test.sample && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 text-sm">Sample Type</h4>
+                                    <p className="text-gray-600 text-sm">{test.sample}</p>
+                                </div>
+                            )}
+                            {test.fasting && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 text-sm">Fasting Required</h4>
+                                    <p className="text-gray-600 text-sm">{test.fasting}</p>
+                                </div>
+                            )}
+                            {test.duration && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 text-sm">Report Time</h4>
+                                    <p className="text-gray-600 text-sm">{test.duration}</p>
+                                </div>
+                            )}
+                            {test.ageGroup && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 text-sm">Age Group</h4>
+                                    <p className="text-gray-600 text-sm">{test.ageGroup}</p>
+                                </div>
                             )}
                         </div>
-                    </div>
 
-                    <p className="text-gray-700 mb-6">
-                        {test.detailedDescription || test.description || 'No description available.'}
-                    </p>
+                        {/* Parameters */}
+                        {Array.isArray(test.parameters) && test.parameters.length > 0 && (
+                            <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                                <h3 className="font-semibold text-gray-800 mb-2 text-sm">Test Parameters:</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-gray-700 text-sm">
+                                    {test.parameters.map((param, idx) => (
+                                        <li key={idx}>{param}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-                    {/* Test Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        {test.sample && (
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                                <h4 className="font-semibold text-gray-800">Sample Type</h4>
-                                <p className="text-gray-600">{test.sample}</p>
-                            </div>
-                        )}
-                        {test.fasting && (
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                                <h4 className="font-semibold text-gray-800">Fasting Required</h4>
-                                <p className="text-gray-600">{test.fasting}</p>
-                            </div>
-                        )}
-                        {test.duration && (
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                                <h4 className="font-semibold text-gray-800">Report Time</h4>
-                                <p className="text-gray-600">{test.duration}</p>
-                            </div>
-                        )}
-                        {test.ageGroup && (
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                                <h4 className="font-semibold text-gray-800">Age Group</h4>
-                                <p className="text-gray-600">{test.ageGroup}</p>
+                        {/* Why it's important */}
+                        {test.whyItIsImportant && (
+                            <div className="bg-yellow-50 rounded-lg p-3 mb-4">
+                                <h3 className="font-semibold text-gray-800 mb-2 text-sm">Why this test is important:</h3>
+                                <p className="text-gray-700 text-sm">{test.whyItIsImportant}</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Parameters */}
-                    {test.parameters && test.parameters.length > 0 && (
-                        <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                            <h3 className="font-semibold text-gray-800 mb-2">Test Parameters:</h3>
-                            <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                                {test.parameters.map((param, idx) => (
-                                    <li key={idx}>{param}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* Why it's important */}
-                    {test.whyItIsImportant && (
-                        <div className="bg-yellow-50 rounded-lg p-4 mb-6">
-                            <h3 className="font-semibold text-gray-800 mb-2">Why this test is important:</h3>
-                            <p className="text-gray-700">{test.whyItIsImportant}</p>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={handleCartAction}
-                        disabled={cartLoading}
-                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart(test._id)
+                    {/* Cart button - fixed at bottom */}
+                    <div className="p-4 border-t bg-white">
+                        <button
+                            onClick={handleCartAction}
+                            disabled={cartLoading}
+                            className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart(test._id)
                                 ? 'bg-red-500 text-white hover:bg-red-600'
                                 : 'bg-[#E23744] text-white hover:bg-[#c12531] hover:shadow-md'
-                            } ${cartLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        {cartLoading ? (
-                            <i className="fas fa-spinner fa-spin mr-2"></i>
-                        ) : isInCart(test._id) ? (
-                            <>
-                                <i className="fas fa-trash mr-2"></i>
-                                Remove from Cart
-                            </>
-                        ) : (
-                            <>
-                                <i className="fas fa-cart-plus mr-2"></i>
-                                Add to Cart
-                            </>
+                                } ${cartLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {cartLoading ? (
+                                <i className="fas fa-spinner fa-spin mr-2"></i>
+                            ) : isInCart(test._id) ? (
+                                <>
+                                    <i className="fas fa-trash mr-2"></i>
+                                    Remove from Cart
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-cart-plus mr-2"></i>
+                                    Add to Cart
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // Desktop right sidebar
+    return (
+        <>
+            {/* Backdrop */}
+            <div
+                className="fixed inset-0 bg-black bg-opacity-30 z-40"
+                onClick={onClose}
+            />
+
+            {/* Right sidebar */}
+            <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
+                <div className="flex flex-col h-full">
+                    <div className="p-6 border-b">
+                        <div className="flex justify-between items-start mb-4">
+                            <h2 className="text-xl font-bold text-[#2D2D2D] pr-4">{test.name}</h2>
+                            <button
+                                onClick={onClose}
+                                className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+                                aria-label="Close details"
+                            >
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center">
+                            {test.originalPrice && test.originalPrice > test.price && (
+                                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">
+                                    {getDiscountPercentage(test.originalPrice, test.price)}% OFF
+                                </div>
+                            )}
+                            <div className="flex items-center space-x-2">
+                                <span className="text-2xl font-bold text-[#E23744]">₹{test.price}</span>
+                                {test.originalPrice && test.originalPrice > test.price && (
+                                    <span className="text-gray-500 line-through">₹{test.originalPrice}</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <p className="text-gray-700 mb-6">
+                            {test.detailedDescription || test.description || 'No description available.'}
+                        </p>
+
+                        {/* Test Information */}
+                        <div className="grid grid-cols-1 gap-4 mb-6">
+                            {test.sample && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">Sample Type</h4>
+                                    <p className="text-gray-600">{test.sample}</p>
+                                </div>
+                            )}
+                            {test.fasting && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">Fasting Required</h4>
+                                    <p className="text-gray-600">{test.fasting}</p>
+                                </div>
+                            )}
+                            {test.duration && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">Report Time</h4>
+                                    <p className="text-gray-600">{test.duration}</p>
+                                </div>
+                            )}
+                            {test.ageGroup && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">Age Group</h4>
+                                    <p className="text-gray-600">{test.ageGroup}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Parameters */}
+                        {Array.isArray(test.parameters) && test.parameters.length > 0 && (
+                            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                                <h3 className="font-semibold text-gray-800 mb-2">Test Parameters:</h3>
+                                <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                                    {test.parameters.map((param, idx) => (
+                                        <li key={idx}>{param}</li>
+                                    ))}
+                                </ul>
+                            </div>
                         )}
-                    </button>
+
+                        {/* Why it's important */}
+                        {test.whyItIsImportant && (
+                            <div className="bg-yellow-50 rounded-lg p-4 mb-6">
+                                <h3 className="font-semibold text-gray-800 mb-2">Why this test is important:</h3>
+                                <p className="text-gray-700">{test.whyItIsImportant}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Cart button - fixed at bottom */}
+                    <div className="p-6 border-t bg-white">
+                        <button
+                            onClick={handleCartAction}
+                            disabled={cartLoading}
+                            className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart(test._id)
+                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                : 'bg-[#E23744] text-white hover:bg-[#c12531] hover:shadow-md'
+                                } ${cartLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {cartLoading ? (
+                                <i className="fas fa-spinner fa-spin mr-2"></i>
+                            ) : isInCart(test._id) ? (
+                                <>
+                                    <i className="fas fa-trash mr-2"></i>
+                                    Remove from Cart
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-cart-plus mr-2"></i>
+                                    Add to Cart
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
 const CategoryTests = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [cart, setCart] = useState([]);
     const [tests, setTests] = useState([]);
     const [selectedTest, setSelectedTest] = useState(null);
@@ -164,22 +303,23 @@ const CategoryTests = () => {
     const [cartLoading, setCartLoading] = useState(false);
     const [error, setError] = useState(null);
     const [categoryName, setCategoryName] = useState('');
+    const [searchMode, setSearchMode] = useState(false);
     const detailPanelRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 768px)');
     const { user, token, API_BASE_URL } = useAuth();
 
-    // Open and close detail functions
-    const openDetail = (test) => {
-        setSelectedTest(test);
-        setIsDetailOpen(true);
-    };
-
-    const closeDetail = () => {
-        setIsDetailOpen(false);
-        setSelectedTest(null);
-    };
-
     useEffect(() => {
+        // Check if we're in search mode (coming from search results)
+        const searchParams = new URLSearchParams(location.search);
+        const searchQuery = searchParams.get('search');
+
+        if (searchQuery) {
+            setSearchMode(true);
+            setCategoryName(`Search Results for "${searchQuery}"`);
+            setLoading(false);
+            return;
+        }
+
         if (!slug) return;
 
         const fetchTests = async () => {
@@ -206,7 +346,7 @@ const CategoryTests = () => {
         };
 
         fetchTests();
-    }, [slug, API_BASE_URL]);
+    }, [slug, API_BASE_URL, location.search]);
 
     const fetchCart = useCallback(async () => {
         try {
@@ -356,6 +496,17 @@ const CategoryTests = () => {
         }
     };
 
+    // Open and close detail functions
+    const openDetail = (test) => {
+        setSelectedTest(test);
+        setIsDetailOpen(true);
+    };
+
+    const closeDetail = () => {
+        setIsDetailOpen(false);
+        setSelectedTest(null);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -373,22 +524,23 @@ const CategoryTests = () => {
         <div className="min-h-screen bg-gray-50">
             <Header />
 
-            <div className="container mx-auto px-4 pt-26 pb-18">
+            <div className={`container mx-auto px-4 pt-26 pb-18 transition-all duration-300 ${isDetailOpen && !isMobile ? 'mr-96' : ''
+                }`}>
                 <div className="mb-6">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center text-[#E23744] hover:text-[#c12531] transition-colors"
                     >
                         <i className="fas fa-arrow-left mr-2"></i>
-                        Back to Categories
+                        {searchMode ? 'Back to Search' : 'Back to Categories'}
                     </button>
                 </div>
 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl md:text-4xl font-bold text-[#2D2D2D] mb-4">
-                        {categoryName} Tests
+                        {categoryName}
                     </h1>
-                    <p className="text-gray-600 text-lg">Choose from our comprehensive range of lab tests</p>
+                    {!searchMode && <p className="text-gray-600 text-lg">Choose from our comprehensive range of lab tests</p>}
                 </div>
 
                 {error ? (
@@ -401,10 +553,10 @@ const CategoryTests = () => {
                     <div className="text-center py-12">
                         <i className="fas fa-flask text-6xl text-gray-300 mb-4"></i>
                         <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                            No tests found for this category
+                            {searchMode ? 'No tests found for your search' : 'No tests found for this category'}
                         </h3>
                         <p className="text-gray-500">
-                            Please try another category or contact us for more information.
+                            {searchMode ? 'Please try another search term' : 'Please try another category or contact us for more information.'}
                         </p>
                     </div>
                 ) : (
@@ -441,8 +593,8 @@ const CategoryTests = () => {
                                                 onClick={() => handleCartToggle(test)}
                                                 disabled={cartLoading}
                                                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 text-sm ${testInCart
-                                                        ? 'bg-red-500 text-white hover:bg-red-600'
-                                                        : 'bg-[#E23744] text-white hover:bg-[#c12531] hover:shadow-md'
+                                                    ? 'bg-red-500 text-white hover:bg-red-600'
+                                                    : 'bg-[#E23744] text-white hover:bg-[#c12531] hover:shadow-md'
                                                     } ${cartLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 {cartLoading ? (
@@ -471,7 +623,7 @@ const CategoryTests = () => {
 
                 {/* Cart Summary */}
                 {cart.length > 0 && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t p-3 z-40">
+                    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t p-3 z-30">
                         <div className="container mx-auto flex items-center justify-between">
                             <div className="flex items-center">
                                 <span className="text-sm font-semibold text-[#2D2D2D] mr-2">
@@ -504,7 +656,7 @@ const CategoryTests = () => {
                     </div>
                 )}
 
-                {/* Detail Modal */}
+                {/* Detail Sidebar/Drawer */}
                 {isDetailOpen && selectedTest && (
                     <TestDetailView
                         test={selectedTest}
@@ -513,9 +665,26 @@ const CategoryTests = () => {
                         onRemoveFromCart={removeFromCart}
                         isInCart={isInCart}
                         cartLoading={cartLoading}
+                        isMobile={isMobile}
                     />
                 )}
             </div>
+
+            {/* Add custom styles for animations */}
+            <style jsx>{`
+                @keyframes slide-up {
+                    from {
+                        transform: translateY(100%);
+                    }
+                    to {
+                        transform: translateY(0);
+                    }
+                }
+                
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out;
+                }
+            `}</style>
         </div>
     );
 };

@@ -41,8 +41,13 @@ const Categories = () => {
     };
 
     return (
-        <section id="categories" className="py-8 md:py-16" style={{ backgroundColor: "#FAF3F0" }}>
-            <div className="container mx-auto px-4">
+        <section
+            id="categories"
+            className="py-8 md:py-16"
+            style={{ backgroundColor: "#FAF3F0", width: "100vw", position: "relative", left: "50%", right: "50%", marginLeft: "-50vw", marginRight: "-50vw" }}
+        >
+            {/* Container with max width and horizontal padding */}
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
                 <div className="text-center mb-8 md:mb-12">
                     <h2 className="text-2xl md:text-3xl font-bold text-[#2D2D2D] mb-3 md:mb-4">
                         Find the Right Test for You
@@ -56,7 +61,7 @@ const Categories = () => {
                 ) : (
                     <div
                         ref={scrollContainer}
-                        className="flex overflow-x-auto pb-6 md:pb-8 gap-4 md:gap-6 px-2 md:px-4 hide-scrollbar"
+                        className="flex overflow-x-auto pb-6 md:pb-8 gap-4 md:gap-6 hide-scrollbar"
                         style={{ scrollBehavior: "smooth" }}
                     >
                         {categories.map((category, index) => (
@@ -100,7 +105,7 @@ const Categories = () => {
                 }
 
                 @media (max-width: 640px) {
-                    #categories .container {
+                    #categories .max-w-[1280px] {
                         padding-left: 1rem;
                         padding-right: 1rem;
                     }

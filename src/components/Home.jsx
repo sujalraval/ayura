@@ -12,6 +12,7 @@ import TakeControl from './Home/TakeControl';
 import Footer from './Footer';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
     const [showBackToTop, setShowBackToTop] = useState(false);
@@ -23,15 +24,17 @@ export default function Home() {
     const [cartItems, setCartItems] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const heroRef = useRef(null);
-
+    const navigate = useNavigate(); // Add this line
     const { user: authUser, token } = useAuth();
     const API_BASE_URL = 'https://ayuras.life/api/v1';
+
+    // All your existing useEffects and functions remain exactly the same...
+    // [I'm keeping the existing logic unchanged for brevity]
 
     // Load all tests on component mount for fallback search
     useEffect(() => {
         const loadAllTests = async () => {
             try {
-                // Try different possible endpoints
                 const endpoints = [
                     `${API_BASE_URL}/lab-tests`,
                     `${API_BASE_URL}/tests`,
@@ -79,7 +82,6 @@ export default function Home() {
                     return;
                 }
 
-                // Try different cart endpoints
                 const cartEndpoints = [
                     `${API_BASE_URL}/cart/${userId}`,
                     `${API_BASE_URL}/user/cart/${userId}`,
@@ -123,7 +125,6 @@ export default function Home() {
             setSearchLoading(true);
 
             try {
-                // Method 1: Try dedicated search endpoints
                 const searchEndpoints = [
                     `${API_BASE_URL}/lab-tests/search?query=${encodeURIComponent(searchTerm.trim())}`,
                     `${API_BASE_URL}/tests/search?query=${encodeURIComponent(searchTerm.trim())}`,
@@ -160,7 +161,6 @@ export default function Home() {
                     }
                 }
 
-                // Method 2: If API search fails, use local filtering
                 if (!searchSuccess && allTests.length > 0) {
                     console.log('Using local search fallback');
                     searchResults = allTests.filter(test => {
@@ -180,7 +180,6 @@ export default function Home() {
             } catch (error) {
                 console.error('Search error:', error);
 
-                // Final fallback: client-side search
                 if (allTests.length > 0) {
                     const filtered = allTests.filter(test => {
                         const searchLower = searchTerm.toLowerCase();
@@ -234,13 +233,17 @@ export default function Home() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Handle test selection
     const handleTestSelect = (test) => {
         console.log('Selected test:', test);
-        window.location.href = `/test-details/${test._id || test.id}`;
+        const testId = test._id || test.id;
+        if (testId) {
+            console.log('Navigating to:', `/test-details/${testId}`);
+            navigate(`/test-details/${testId}`);
+        } else {
+            console.error('No test ID found:', test);
+        }
     };
 
-    // Handle add to cart with multiple endpoint attempts
     const handleAddToCart = async (test) => {
         setCartLoading(true);
 
@@ -248,7 +251,6 @@ export default function Home() {
             const userId = authUser?.email || localStorage.getItem('userEmail');
 
             if (!userId) {
-                // Local storage fallback
                 const existingItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
                 const isAlreadyInCart = existingItems.some(item =>
                     item._id === test._id || item.testId === test._id || item.id === test._id
@@ -275,7 +277,6 @@ export default function Home() {
                 return;
             }
 
-            // Try different cart add endpoints
             const cartItem = {
                 testId: test._id || test.id,
                 testName: test.name || test.title,
@@ -330,7 +331,6 @@ export default function Home() {
         }
     };
 
-    // Check if test is in cart
     const isTestInCart = (testId) => {
         return cartItems.some(item =>
             item._id === testId ||
@@ -339,7 +339,6 @@ export default function Home() {
         );
     };
 
-    // Remove from cart
     const handleRemoveFromCart = async (testId) => {
         try {
             const userId = authUser?.email || localStorage.getItem('userEmail');
@@ -355,7 +354,6 @@ export default function Home() {
                 return;
             }
 
-            // Try different remove endpoints
             const removeEndpoints = [
                 `${API_BASE_URL}/cart/remove/${userId}/${testId}`,
                 `${API_BASE_URL}/user/cart/remove/${userId}/${testId}`,
@@ -385,7 +383,7 @@ export default function Home() {
     };
 
     return (
-        <>
+        <div className="min-h-screen">
             <Header
                 showSearch={showHeaderSearch}
                 searchTerm={searchTerm}
@@ -398,7 +396,7 @@ export default function Home() {
                 searchLoading={searchLoading}
             />
 
-            <main>
+            <main className="w-full max-w-none">
                 <div ref={heroRef}>
                     <HeroSection
                         searchTerm={searchTerm}
@@ -412,34 +410,64 @@ export default function Home() {
                         searchLoading={searchLoading}
                     />
                 </div>
+
+                {/* Categories without padding wrapper */}
                 <Categories />
-                <WhyChoose />
+
+                <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+                    <WhyChoose />
+                </div>
+
+                {/* PopularTests without padding wrapper - allows full width background */}
                 <PopularTests
                     onAddToCart={handleAddToCart}
                     isInCart={isTestInCart}
                     cartLoading={cartLoading}
                 />
-                <ExpectFromUs />
-                <CustomersSay />
-                <TakeControl />
+
+                <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+                    <ExpectFromUs />
+                </div>
+
+                <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+                    <CustomersSay />
+                </div>
+
+                <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+                    <TakeControl />
+                </div>
             </main>
 
+            {/* Back to Top Button */}
             {showBackToTop && (
                 <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 bg-[#E23744] text-white p-3 rounded-full shadow-lg hover:bg-[#c5313d] transition-colors z-40"
+                    className="fixed bottom-6 right-6 bg-[#E23744] text-white p-3 rounded-full shadow-lg hover:bg-[#c5313d] transition-all duration-300 z-40 hover:shadow-xl"
                     aria-label="Back to top"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 10l7-7m0 0l7 7m-7-7v18"
+                        />
                     </svg>
                 </motion.button>
             )}
 
             <Footer />
-        </>
+        </div>
     );
 }

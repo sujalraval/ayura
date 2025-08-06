@@ -7,6 +7,7 @@ import Home from './components/Home';
 import Profile from './components/Profile';
 import Cart from './components/Cart';
 import CategoryTests from './components/Home/CategoryTests';
+import TestDetails from './components/Home/TestDetails';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -19,6 +20,7 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/test-details/:id" element={<TestDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/category-tests/:slug" element={<CategoryTests />} />

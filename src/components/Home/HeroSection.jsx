@@ -1,3 +1,4 @@
+// HeroSection.jsx
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -79,7 +80,7 @@ export default function HeroSection({
     }
 
     return (
-        <section id="home" className="relative pt-20 pb-20 md:pt-32 md:pb-32 bg-gradient-to-br from-red-50 to-white overflow-hidden">
+        <section id="home" className="relative pt-20 pb-20 md:pt-32 md:pb-32 overflow-hidden">
             <style>{`
                 @keyframes slideMessages {
                     0%, 19% { transform: translateY(0); }
@@ -100,11 +101,9 @@ export default function HeroSection({
                 }
             `}</style>
 
-            <div className="container mx-auto px-4 max-w-7xl relative z-10">
+            <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 relative z-10">
                 <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-                    {/* Left Content - 40% on large screens */}
                     <div className="w-full lg:w-2/5 text-center lg:text-left order-2 lg:order-1">
-                        {/* Main Heading */}
                         <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 lg:mb-6 leading-tight">
                             Looking for a test?
                         </h1>
@@ -113,7 +112,6 @@ export default function HeroSection({
                             Find the right health test for you with our comprehensive search
                         </p>
 
-                        {/* Search Bar */}
                         <div className="mb-8 relative" ref={searchRef}>
                             <div className="flex items-center bg-white rounded-full shadow-lg px-5 py-4 w-full max-w-2xl mx-auto lg:mx-0 relative border border-gray-200">
                                 <Search className="text-red-500 w-5 h-5 mr-4 flex-shrink-0" />
@@ -130,7 +128,6 @@ export default function HeroSection({
                                 )}
                             </div>
 
-                            {/* Search Loading State */}
                             {showSuggestions && searchLoading && (
                                 <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl mt-2 z-50 border border-gray-200">
                                     <div className="px-5 py-4 text-center">
@@ -140,7 +137,6 @@ export default function HeroSection({
                                 </div>
                             )}
 
-                            {/* Search Suggestions */}
                             {showSuggestions && !searchLoading && filteredTests.length > 0 && (
                                 <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl mt-2 z-50 max-h-80 overflow-y-auto border border-gray-200">
                                     {filteredTests.map((test, index) => {
@@ -153,13 +149,11 @@ export default function HeroSection({
                                             <div
                                                 key={testId || index}
                                                 className="px-4 py-4 cursor-pointer hover:bg-red-50 transition-all duration-200 border-b border-gray-100 last:border-b-0"
+                                                onClick={() => handleSuggestionClick(test)}
                                             >
                                                 <div className="flex justify-between items-center gap-4">
                                                     <div className="flex-1 min-w-0">
-                                                        <div
-                                                            className="font-semibold text-gray-800 text-left mb-1 hover:text-red-600 transition-colors cursor-pointer"
-                                                            onClick={() => handleSuggestionClick(test)}
-                                                        >
+                                                        <div className="font-semibold text-gray-800 text-left mb-1">
                                                             {testName}
                                                         </div>
 
@@ -182,33 +176,13 @@ export default function HeroSection({
                                                         )}
                                                     </div>
 
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={(e) => handleViewDetails(test, e)}
-                                                            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                            View
-                                                        </button>
-
-                                                        <button
-                                                            onClick={(e) => handleAddToCart(test, e)}
-                                                            disabled={isLoading}
-                                                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-all ${inCart
-                                                                ? 'bg-green-500 text-white hover:bg-green-600'
-                                                                : 'bg-red-500 text-white hover:bg-red-600'
-                                                                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            {isLoading ? (
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                            ) : inCart ? (
-                                                                <Check className="w-4 h-4" />
-                                                            ) : (
-                                                                <Plus className="w-4 h-4" />
-                                                            )}
-                                                            {inCart ? 'Added' : 'Add'}
-                                                        </button>
-                                                    </div>
+                                                    <button
+                                                        onClick={(e) => handleViewDetails(test, e)}
+                                                        className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                        View
+                                                    </button>
                                                 </div>
                                             </div>
                                         )
@@ -216,7 +190,6 @@ export default function HeroSection({
                                 </div>
                             )}
 
-                            {/* No Results */}
                             {showSuggestions && !searchLoading && searchTerm.length > 0 && filteredTests.length === 0 && (
                                 <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-lg mt-2 z-50 border border-gray-200">
                                     <div className="px-5 py-4 text-gray-500 text-center">
@@ -226,19 +199,8 @@ export default function HeroSection({
                                 </div>
                             )}
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                            <button className="px-8 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg">
-                                Select Health Package
-                            </button>
-                            <button className="px-8 py-3 bg-white text-red-600 border-2 border-red-600 rounded-lg font-semibold hover:bg-red-50 transition-colors">
-                                Create Your Own Package
-                            </button>
-                        </div>
                     </div>
 
-                    {/* Right Image - 60% on large screens with much smaller height */}
                     <div className="w-full lg:w-3/5 order-1 lg:order-2">
                         <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-[280px] xl:h-[320px]">
                             <img
@@ -247,38 +209,10 @@ export default function HeroSection({
                                 className="w-full h-full object-cover rounded-3xl shadow-2xl"
                                 loading="eager"
                             />
-                            {/* Subtle overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent rounded-3xl"></div>
                         </div>
                     </div>
                 </div>
-
-                {/* Trust Indicators */}
-                <div className="mt-16  border-gray-200">
-                    <div className="flex flex-wrap justify-center lg:justify-start gap-8 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <span>Trusted by 70+ Lakhs Patients</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span>Family-like Care</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <span>India's Most Loved Diagnostics Lab</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div className="absolute bottom-0 left-0 w-full leading-0 z-0">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-                    <path
-                        fill="#FAF3F0"
-                        fillOpacity="1"
-                        d="M0,192L48,192C96,192,192,192,288,186.7C384,181,480,171,576,186.7C672,203,768,245,864,245.3C960,245,1056,203,1152,186.7C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                    ></path>
-                </svg>
             </div>
         </section>
     )
